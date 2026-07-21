@@ -29,6 +29,18 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .upin .halo{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);width:26px;height:10px;border-radius:99px;background:rgba(31,42,68,.22);animation:halo 2s infinite}
 @keyframes halo{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.35)}}
 
+/* ================= MAP CONTROLS (Google-app style) ================= */
+.mapctl{position:fixed;right:10px;top:44%;transform:translateY(-50%);z-index:14;display:flex;flex-direction:column;gap:9px;align-items:center}
+.mbtn{width:44px;height:44px;border:none;border-radius:99px;background:rgba(18,24,38,.82);backdrop-filter:blur(6px);
+  color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35);
+  font:800 13px 'Plus Jakarta Sans';transition:transform .15s}
+.mbtn:active{transform:scale(.92)}
+.mbtn svg{width:22px;height:22px}
+.zoompill{display:flex;flex-direction:column;border-radius:24px;background:rgba(18,24,38,.82);backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.35);overflow:hidden}
+.zoompill button{width:44px;height:44px;border:none;background:transparent;color:#fff;font:600 24px 'Plus Jakarta Sans';cursor:pointer;line-height:1}
+.zoompill button:first-child{border-bottom:1px solid rgba(255,255,255,.15)}
+#compassNeedle{transition:transform .3s ease}
+
 /* ================= TOP BAR ================= */
 .top{position:fixed;top:0;left:0;right:0;z-index:20;padding:14px 16px;display:flex;gap:10px;align-items:center}
 .search{flex:1;display:flex;align-items:center;gap:10px;background:var(--card);border-radius:99px;padding:14px 18px;box-shadow:var(--shadow)}
@@ -124,6 +136,21 @@ h2{font-size:17px;font-weight:800}
   </div>
   <div class="bell" onclick="toast('No new notifications')">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F2A44" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+  </div>
+</div>
+
+<!-- ============ MAP CONTROLS ============ -->
+<div class="mapctl">
+  <button class="mbtn" onclick="ctlCompass()" title="Reset north">
+    <svg id="compassNeedle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/><path d="M12 3.5 15 12H9L12 3.5Z" fill="#E5484D"/><path d="M12 20.5 9 12h6l-3 8.5Z" fill="#fff"/></svg>
+  </button>
+  <button class="mbtn" id="btn3d" onclick="ctl3D()" title="3D view">3D</button>
+  <button class="mbtn" onclick="ctlLocate()" title="My location">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.4" fill="#fff" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+  </button>
+  <div class="zoompill">
+    <button onclick="ctlZoom(1)" title="Zoom in">+</button>
+    <button onclick="ctlZoom(-1)" title="Zoom out">−</button>
   </div>
 </div>
 
@@ -254,7 +281,8 @@ let map,user={lat:5.6037,lng:-0.1870},providers=[],sel=null,pick=null,trip=null,
 
 /* ============ LIVE GOOGLE MAP ============ */
 function initMap(){
-  map=new google.maps.Map($('map'),{center:{lat:user.lat-0.004,lng:user.lng},zoom:15,disableDefaultUI:true,gestureHandling:'greedy',clickableIcons:false});
+  map=new google.maps.Map($('map'),{center:{lat:user.lat-0.004,lng:user.lng},zoom:15,disableDefaultUI:true,gestureHandling:'greedy',clickableIcons:false,mapId:'DEMO_MAP_ID',heading:0,tilt:0});
+  map.addListener('heading_changed',()=>{const n=$('compassNeedle');if(n)n.style.transform=`rotate(${-(map.getHeading()||0)}deg)`;});
   if(navigator.geolocation)navigator.geolocation.getCurrentPosition(
     p=>{user={lat:p.coords.latitude,lng:p.coords.longitude};map.setCenter({lat:user.lat-0.004,lng:user.lng});$('locSub').textContent='Your live location · NHIS accepted';boot();},
     ()=>{$('locSub').textContent='Accra (default) · NHIS accepted';boot();},{timeout:5000});
@@ -269,9 +297,10 @@ function ovMarker(pos,html){
   o.el=function(){return this.div};
   o.setMap(map);return o;
 }
+let userMarker=null;
 function boot(){
   if(started)return;started=true;
-  ovMarker(user,`<div class="upin"><div class="halo"></div><svg width="52" height="62" viewBox="0 0 52 62" style="transform:translateY(-40%)"><path d="M26 2C13 2 3 12 3 25c0 16 23 35 23 35s23-19 23-35C49 12 39 2 26 2Z" fill="#1F2A44"/><circle cx="26" cy="24" r="9" fill="#fff"/></svg></div>`);
+  userMarker=ovMarker(user,`<div class="upin"><div class="halo"></div><svg width="52" height="62" viewBox="0 0 52 62" style="transform:translateY(-40%)"><path d="M26 2C13 2 3 12 3 25c0 16 23 35 23 35s23-19 23-35C49 12 39 2 26 2Z" fill="#1F2A44"/><circle cx="26" cy="24" r="9" fill="#fff"/></svg></div>`);
   let idx=0;
   SERVICES.forEach(s=>NAMES[s.id].forEach(n=>{
     const pos={lat:user.lat+R(-.012,.012),lng:user.lng+R(-.012,.012)};
@@ -406,6 +435,27 @@ function pickProv(i){
   if(map)map.panTo(pick.pos);
   setSnap('mid');
   $('reqBtn').disabled=false;$('reqBtn').textContent=`Request ${pick.name.split(' ')[0]} · ${pick.eta} min`;
+}
+
+/* ============ map controls ============ */
+function ctlZoom(d){if(map)map.setZoom(map.getZoom()+d);}
+function ctlCompass(){if(!map)return;try{map.setHeading(0);map.setTilt(0);$('btn3d').textContent='3D';}catch(e){}}
+function ctl3D(){
+  if(!map)return;
+  try{
+    if((map.getTilt()||0)>0){map.setTilt(0);map.setHeading(0);$('btn3d').textContent='3D';}
+    else{map.setTilt(67.5);map.setHeading(30);$('btn3d').textContent='2D';}
+  }catch(e){toast('3D not available here');}
+}
+function ctlLocate(){
+  if(!navigator.geolocation)return toast('Location not available');
+  toast('Finding you…');
+  navigator.geolocation.getCurrentPosition(p=>{
+    user={lat:p.coords.latitude,lng:p.coords.longitude};
+    if(userMarker)userMarker.move(user);
+    if(map){map.panTo(user);map.setZoom(16);}
+    $('locSub').textContent='Your live location · NHIS accepted';
+  },()=>toast('Could not get your location'),{enableHighAccuracy:true,timeout:8000});
 }
 
 /* ============ auth ============ */
