@@ -20,7 +20,7 @@
 body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);height:100dvh;overflow:hidden;overscroll-behavior:none}
 
 /* ================= LIVE MAP ================= */
-#map{position:fixed;inset:0}
+#map{position:fixed !important;top:0;left:0;width:100vw !important;height:100dvh !important}
 .mk{width:38px;height:38px;border-radius:13px;background:#fff;
   box-shadow:0 4px 14px rgba(31,42,68,.25);display:flex;align-items:center;justify-content:center;font-size:17px;
   transition:box-shadow .2s;border:1.5px solid transparent}
@@ -146,11 +146,16 @@ h2{font-size:17px;font-weight:800}
       <button class="cta" id="bookBtn" disabled onclick="listProviders()">Book Care</button>
     </div>
 
-    <!-- AUTH STEP 1: email -->
+    <!-- AUTH STEP 1: email or phone -->
     <div class="step" id="pA1">
       <h2>Sign in to book</h2>
-      <p class="sub">We'll email you a 6-digit code — no password needed.</p>
+      <p class="sub">We'll send you a 6-digit code — no password needed.</p>
+      <div class="row2" style="margin-bottom:4px">
+        <button class="ghost" id="tabEmail" style="margin-top:0;background:var(--ink);color:#fff" onclick="setAuthMode('email')">📧 Email</button>
+        <button class="ghost" id="tabPhone" style="margin-top:0" onclick="setAuthMode('phone')">📱 Phone</button>
+      </div>
       <input class="field" id="authEmail" type="email" inputmode="email" placeholder="you@email.com">
+      <input class="field" id="authPhone" type="tel" inputmode="tel" placeholder="+233 24 000 0000" style="display:none">
       <button class="cta" onclick="sendCode()" id="sendBtn">Send Code</button>
       <button class="ghost" onclick="backToHome()">Cancel</button>
     </div>
@@ -270,16 +275,8 @@ function boot(){
   let idx=0;
   SERVICES.forEach(s=>NAMES[s.id].forEach(n=>{
     const pos={lat:user.lat+R(-.012,.012),lng:user.lng+R(-.012,.012)};
-    const m=ovMarker(pos,`<div class="mk">${MICON[s.id]}</div>`);
-    providers.push({i:idx++,svc:s.id,name:n[0],role:n[1],face:n[2],pos,m,eta:0});
+    providers.push({i:idx++,svc:s.id,name:n[0],role:n[1],face:n[2],pos,m:null,eta:0});
   }));
-  setInterval(()=>{ if(trip)return;
-    providers.forEach(p=>{
-      if(p.real)return; /* real providers stay at their reported location */
-      p.pos={lat:p.pos.lat+R(-.0004,.0004),lng:p.pos.lng+R(-.0004,.0004)};
-      p.m.move(p.pos);
-    });
-  },1200);
   loadRealProviders();
 }
 async function loadRealProviders(){
@@ -405,31 +402,57 @@ function pickProv(i){
   document.querySelectorAll('.prov').forEach(e=>e.classList.remove('sel'));
   $('pv'+i).classList.add('sel');
   document.querySelectorAll('.mk').forEach(e=>e.classList.remove('active'));
-  const el=pick.m.el();if(el&&el.firstChild)el.firstChild.classList.add('active');
+  if(pick.m){const el=pick.m.el();if(el&&el.firstChild)el.firstChild.classList.add('active');}
   if(map)map.panTo(pick.pos);
   setSnap('mid');
   $('reqBtn').disabled=false;$('reqBtn').textContent=`Request ${pick.name.split(' ')[0]} · ${pick.eta} min`;
 }
 
 /* ============ auth ============ */
+let authMode='email';
+function setAuthMode(m){
+  authMode=m;
+  $('tabEmail').style.cssText='margin-top:0'+(m==='email'?';background:var(--ink);color:#fff':'');
+  $('tabPhone').style.cssText='margin-top:0'+(m==='phone'?';background:var(--ink);color:#fff':'');
+  $('authEmail').style.display=m==='email'?'':'none';
+  $('authPhone').style.display=m==='phone'?'':'none';
+}
+function normPhone(p){
+  p=p.replace(/[\s-]/g,'');
+  if(p.startsWith('0'))p='+233'+p.slice(1);      /* 024… → +23324… */
+  if(!p.startsWith('+'))p='+'+p;
+  return p;
+}
 async function sendCode(){
-  const email=$('authEmail').value.trim();
-  if(!email||!email.includes('@'))return toast('Enter a valid email');
   $('sendBtn').disabled=true;$('sendBtn').textContent='Sending…';
-  const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true}});
+  let error,target;
+  if(authMode==='email'){
+    target=$('authEmail').value.trim();
+    if(!target||!target.includes('@')){$('sendBtn').disabled=false;$('sendBtn').textContent='Send Code';return toast('Enter a valid email');}
+    ({error}=await sb.auth.signInWithOtp({email:target,options:{shouldCreateUser:true}}));
+  }else{
+    target=normPhone($('authPhone').value.trim());
+    if(target.length<12){$('sendBtn').disabled=false;$('sendBtn').textContent='Send Code';return toast('Enter a valid phone number');}
+    ({error}=await sb.auth.signInWithOtp({phone:target,options:{shouldCreateUser:true}}));
+  }
   $('sendBtn').disabled=false;$('sendBtn').textContent='Send Code';
   if(error)return toast(error.message);
-  $('codeSub').textContent='Code sent to '+email;
+  $('codeSub').textContent='Code sent to '+target;
   go('pA2');setSnap('full');
 }
 async function verifyCode(){
-  const email=$('authEmail').value.trim(),code=$('authCode').value.trim();
+  const code=$('authCode').value.trim();
   if(code.length<6)return toast('Enter the 6-digit code');
   $('verifyBtn').disabled=true;$('verifyBtn').textContent='Verifying…';
-  const {data,error}=await sb.auth.verifyOtp({email,token:code,type:'email'});
+  let res;
+  if(authMode==='email'){
+    res=await sb.auth.verifyOtp({email:$('authEmail').value.trim(),token:code,type:'email'});
+  }else{
+    res=await sb.auth.verifyOtp({phone:normPhone($('authPhone').value.trim()),token:code,type:'sms'});
+  }
   $('verifyBtn').disabled=false;$('verifyBtn').textContent='Verify & Continue';
-  if(error)return toast(error.message);
-  session=data.session;toast('Signed in ✓');
+  if(res.error)return toast(res.error.message);
+  session=res.data.session;toast('Signed in ✓');
   if(pendingReq){pendingReq=false;requestProvider();}else backToHome();
 }
 
@@ -459,6 +482,7 @@ function requestProvider(){
   if(!pick)return;
   if(!session){pendingReq=true;go('pA1');setSnap('full');return;}
   trip=pick;
+  if(!trip.m)trip.m=ovMarker(trip.pos,`<div class="mk active">${trip.face}</div>`);
   createBooking();
   $('tAva').textContent=trip.face;$('tName').textContent=trip.name;$('tRole').textContent=trip.role;
   go('p3');setSnap('mid');drawRoute(true);
@@ -478,7 +502,8 @@ function requestProvider(){
 function arrived(){
   drawRoute(false);
   $('doneName').textContent=trip.name;
-  const el=trip.m.el();if(el&&el.firstChild)el.firstChild.classList.remove('active');
+  if(trip.m&&!trip.real){trip.m.setMap(null);trip.m=null;}      /* demo helper leaves the map */
+  else if(trip.m){const el=trip.m.el();if(el&&el.firstChild)el.firstChild.classList.remove('active');}
   trip=null;
   setBookingStatus('completed');
   go('p4');setSnap('mid');confetti();
@@ -486,7 +511,11 @@ function arrived(){
 function cancelTrip(){
   if(tripTimer)clearInterval(tripTimer);
   drawRoute(false);
-  if(trip){const el=trip.m.el();if(el&&el.firstChild)el.firstChild.classList.remove('active');trip=null;}
+  if(trip){
+    if(trip.m&&!trip.real){trip.m.setMap(null);trip.m=null;}
+    else if(trip.m){const el=trip.m.el();if(el&&el.firstChild)el.firstChild.classList.remove('active');}
+    trip=null;
+  }
   setBookingStatus('cancelled');
   toast('Booking cancelled');backToHome();
 }
@@ -512,6 +541,6 @@ renderSvcs(SERVICES);
 layoutSheet();
 setSnap('mid',false);
 </script>
-<script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC7teOyzCVKPJ3y2I6Ei0f8KljggOWf4ws&callback=initMap"></script>
+<script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC7teOyzCVKPJ3y2I6Ei0f8KljggOWf4ws&loading=async&callback=initMap"></script>
 </body>
 </html>
