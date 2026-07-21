@@ -30,7 +30,8 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 @keyframes halo{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.35)}}
 
 /* ================= MAP CONTROLS (Google-app style) ================= */
-.mapctl{position:fixed;right:10px;top:44%;transform:translateY(-50%);z-index:14;display:flex;flex-direction:column;gap:9px;align-items:center}
+.mapctl{position:fixed;right:12px;bottom:150px;z-index:14;display:flex;flex-direction:column;gap:9px;align-items:center}
+.mapctl.anim{transition:bottom .3s cubic-bezier(.2,.9,.25,1),opacity .25s ease}
 .mbtn{width:44px;height:44px;border:none;border-radius:99px;background:rgba(18,24,38,.82);backdrop-filter:blur(6px);
   color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35);
   font:800 13px 'Plus Jakarta Sans';transition:transform .15s}
@@ -368,7 +369,7 @@ function layoutSheet(){
   const vh=innerHeight;
   sheetH=Math.min(620,Math.round(vh*0.8));
   sheet.style.height=sheetH+'px';
-  snaps={full:0, mid:sheetH-Math.min(230,Math.round(vh*0.28)), min:sheetH-118};
+  snaps={full:0, mid:sheetH-Math.min(230,Math.round(vh*0.28)), min:sheetH-196};
   setSnap(cur,false);
 }
 function sync(animate){
@@ -379,11 +380,20 @@ function sync(animate){
   cards.style.opacity=k;
   cards.style.transform=`translateY(${24*(1-k)}px) scale(${.96+.04*k})`;
   cards.style.pointerEvents=k>.6?'auto':'none';
+  /* map controls ride just above the sheet, always on-screen; fade under the cards */
+  const ctl=document.querySelector('.mapctl');
+  if(ctl){
+    ctl.style.bottom=(Math.min(visible,cap)+16)+'px';
+    const vis=step==='p1'?1-k:1;
+    ctl.style.opacity=vis;
+    ctl.style.pointerEvents=vis>.5?'auto':'none';
+  }
 }
 function setSnap(name,animate=true){
   cur=name;ty=snaps[name];
   sheet.classList.toggle('anim',animate);
   cards.classList.toggle('anim',animate);
+  const _ctl=document.querySelector('.mapctl');if(_ctl)_ctl.classList.toggle('anim',animate);
   sheet.style.transform=`translateY(${ty}px)`;
   inner.classList.toggle('scroll',name==='full');
   if(name!=='full')inner.scrollTop=0;
@@ -394,6 +404,7 @@ sheet.addEventListener('pointerdown',e=>{
   if(cur==='full'&&inner.scrollTop>0)return;
   drag={y0:e.clientY,ty0:ty,moved:false};
   sheet.classList.remove('anim');cards.classList.remove('anim');
+  const _ctl=document.querySelector('.mapctl');if(_ctl)_ctl.classList.remove('anim');
 });
 addEventListener('pointermove',e=>{
   if(!drag)return;
