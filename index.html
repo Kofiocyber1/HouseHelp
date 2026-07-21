@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>House Help — Care & Home Services, On Demand</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1F2A44;
+  --blue:#4A8BC2;
+  --bg:#F4F2ED;
+  --card:#FFFFFF;
+  --mut:#8A8F9C;
+  --ok:#1FA97A;
+  --shadow:0 10px 30px rgba(31,42,68,.14);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);height:100dvh;overflow:hidden;overscroll-behavior:none}
+
+/* ================= MAP (static placeholder) ================= */
+#map{position:fixed;inset:0;overflow:hidden}
+#map svg.base{position:absolute;inset:0;width:100%;height:100%}
+#route{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+.mk{position:absolute;transform:translate(-50%,-50%);z-index:4;width:38px;height:38px;border-radius:13px;background:#fff;
+  box-shadow:0 4px 14px rgba(31,42,68,.25);display:flex;align-items:center;justify-content:center;font-size:17px;
+  transition:box-shadow .2s;border:1.5px solid transparent}
+.mk.active{background:var(--ink);border-color:var(--ink);box-shadow:0 6px 20px rgba(31,42,68,.5)}
+.upin{position:absolute;transform:translate(-50%,-92%);z-index:4;pointer-events:none}
+.upin .halo{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);width:26px;height:10px;border-radius:99px;background:rgba(31,42,68,.22);animation:halo 2s infinite}
+@keyframes halo{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.35)}}
+
+/* ================= TOP BAR ================= */
+.top{position:fixed;top:0;left:0;right:0;z-index:20;padding:14px 16px;display:flex;gap:10px;align-items:center}
+.search{flex:1;display:flex;align-items:center;gap:10px;background:var(--card);border-radius:99px;padding:14px 18px;box-shadow:var(--shadow)}
+.search input{border:none;outline:none;font:600 14px 'Plus Jakarta Sans';color:var(--ink);width:100%;background:transparent}
+.search input::placeholder{color:var(--mut);font-weight:500}
+.bell{width:48px;height:48px;border-radius:99px;background:var(--card);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+
+/* ================= FLOATING SERVICE CARDS ================= */
+#cards{position:fixed;left:18px;right:18px;z-index:15;max-width:444px;margin:0 auto;
+  display:grid;grid-template-columns:1fr 1fr;gap:13px;pointer-events:none;
+  opacity:0;transform:translateY(24px) scale(.96)}
+#cards.anim{transition:opacity .28s ease,transform .28s ease,bottom .3s cubic-bezier(.2,.9,.25,1)}
+.svc{pointer-events:auto;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);border-radius:26px;padding:20px 12px 16px;
+  text-align:center;cursor:pointer;box-shadow:0 12px 30px rgba(31,42,68,.18);transition:transform .15s ease,background .2s}
+.svc:active{transform:scale(.96)}
+.svc .ic{height:44px;display:flex;align-items:center;justify-content:center}
+.svc .ic svg{width:38px;height:38px;stroke:var(--ink);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.svc .nm{font-size:15px;font-weight:800;margin-top:8px}
+.svc.sel{background:var(--ink)}
+.svc.sel .ic svg{stroke:#fff}
+.svc.sel .nm{color:#fff}
+/* stagger like the reference */
+.svc:nth-child(even){transform:translateY(14px)}
+.svc:nth-child(even):active{transform:translateY(14px) scale(.96)}
+.svc.sel:nth-child(even){transform:translateY(14px)}
+
+/* ================= BOTTOM SHEET ================= */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:480px;margin:0 auto;background:var(--card);
+  border-radius:30px 30px 0 0;box-shadow:0 -14px 44px rgba(31,42,68,.20);touch-action:none;will-change:transform}
+.sheet.anim{transition:transform .3s cubic-bezier(.2,.9,.25,1)}
+.handle{padding:12px 0 8px;cursor:grab}
+.grab{width:46px;height:5px;border-radius:99px;background:#E2E0DA;margin:0 auto}
+.inner{padding:0 20px calc(18px + env(safe-area-inset-bottom));overflow:hidden;height:calc(100% - 30px)}
+.inner.scroll{overflow-y:auto;touch-action:pan-y}
+.step{display:none;animation:up .3s ease both}
+.step.on{display:block}
+@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+h2{font-size:17px;font-weight:800}
+.sub{font-size:12.5px;color:var(--mut);font-weight:500;margin-top:2px;margin-bottom:13px}
+
+.loc{display:flex;align-items:center;gap:12px;padding:4px 2px 6px}
+.loc .pin{width:40px;height:40px;border-radius:99px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex:none}
+.loc .t{flex:1;min-width:0}
+.loc .a{font-size:14px;font-weight:800}
+.loc .b{font-size:11.5px;color:var(--mut);font-weight:500;margin-top:1px}
+
+.cta{width:100%;margin-top:12px;padding:17px;border:none;border-radius:99px;cursor:pointer;
+  font:700 15.5px 'Plus Jakarta Sans';color:#fff;background:var(--blue);box-shadow:0 10px 26px rgba(74,139,194,.45);transition:.15s}
+.cta:active{transform:scale(.98)}
+.cta:disabled{opacity:.4;box-shadow:none}
+.ghost{width:100%;margin-top:10px;padding:14px;border-radius:99px;border:none;background:var(--bg);color:var(--ink);font:700 13px 'Plus Jakarta Sans';cursor:pointer}
+
+/* providers */
+.prov{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:20px;padding:12px 14px;margin-bottom:9px;cursor:pointer;border:1.5px solid transparent;transition:.15s}
+.prov.sel{border-color:var(--blue);background:#fff;box-shadow:var(--shadow)}
+.pav{width:44px;height:44px;border-radius:99px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:21px;flex:none;box-shadow:0 2px 8px rgba(31,42,68,.08)}
+.prov.sel .pav{background:var(--bg)}
+.prov .info{flex:1;min-width:0}
+.prov .n{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:6px}
+.prov .d{font-size:11px;color:var(--mut);font-weight:500;margin-top:1px}
+.vbadge{font-size:8.5px;font-weight:800;color:var(--ok);border:1px solid rgba(31,169,122,.35);border-radius:6px;padding:1.5px 5px;letter-spacing:.3px}
+.prov .eta{text-align:right;flex:none}
+.prov .eta b{font-size:15px}
+.prov .eta span{display:block;font-size:10px;color:var(--mut);font-weight:600}
+
+/* tracking */
+.track{display:flex;align-items:center;gap:13px;margin-bottom:4px}
+.track .pav{width:54px;height:54px;font-size:26px}
+.etaBig{margin-left:auto;text-align:right}
+.etaBig b{font-size:26px}
+.etaBig span{display:block;font-size:10.5px;color:var(--mut);font-weight:600}
+.bar{height:6px;border-radius:99px;background:var(--bg);overflow:hidden;margin:13px 0}
+.bar i{display:block;height:100%;width:0%;border-radius:99px;background:var(--blue);transition:width .8s linear}
+.row2{display:flex;gap:9px}
+.row2 .ghost{margin-top:0}
+
+/* toast */
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:50;background:var(--ink);color:#fff;
+  font-size:12.5px;font-weight:600;padding:11px 18px;border-radius:99px;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ============ STATIC MAP PLACEHOLDER ============ -->
+<div id="map">
+  <svg class="base" viewBox="0 0 800 1300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <rect width="800" height="1300" fill="#EDEAE3"/>
+    <!-- water -->
+    <path d="M-20 90 Q120 40 240 110 Q300 150 260 230 Q180 300 60 260 Q-40 220 -20 90Z" fill="#C9DDEA"/>
+    <!-- parks -->
+    <path d="M560 180 q120 -40 200 30 q40 90 -40 150 q-130 40 -190 -30 q-30 -100 30 -150Z" fill="#DCE5D0"/>
+    <path d="M80 950 q100 -50 180 10 q50 80 -20 140 q-120 50 -180 -20 q-30 -80 20 -130Z" fill="#DCE5D0"/>
+    <path d="M600 1050 q90 -30 140 30 q30 70 -30 110 q-100 30 -140 -30 q-20 -70 30 -110Z" fill="#E2E8D8"/>
+    <!-- minor roads grid -->
+    <g stroke="#FFFFFF" stroke-width="7" fill="none" stroke-linecap="round">
+      <path d="M-20 340 L820 300"/><path d="M-20 520 L820 470"/><path d="M-20 700 L820 660"/>
+      <path d="M-20 880 L820 850"/><path d="M-20 1060 L820 1030"/><path d="M-20 1200 L820 1180"/>
+      <path d="M140 -20 L180 1320"/><path d="M340 -20 L360 1320"/><path d="M540 -20 L520 1320"/><path d="M700 -20 L680 1320"/>
+      <path d="M60 200 Q200 260 300 420"/><path d="M600 500 Q680 620 640 780"/><path d="M240 760 Q320 860 260 1010"/>
+    </g>
+    <!-- highways -->
+    <g fill="none" stroke-linecap="round">
+      <path d="M-30 780 Q240 560 430 430 Q620 300 830 240" stroke="#EFD9A6" stroke-width="20"/>
+      <path d="M-30 780 Q240 560 430 430 Q620 300 830 240" stroke="#F7E5BC" stroke-width="14"/>
+      <path d="M120 1320 Q260 1000 420 860 Q560 740 820 700" stroke="#EFD9A6" stroke-width="16"/>
+      <path d="M120 1320 Q260 1000 420 860 Q560 740 820 700" stroke="#F7E5BC" stroke-width="11"/>
+    </g>
+    <!-- labels -->
+    <g font-family="Plus Jakarta Sans,system-ui,sans-serif" fill="#9AA0AC">
+      <text x="430" y="250" font-size="44" font-weight="800" fill="#6E7684">Accra</text>
+      <text x="440" y="286" font-size="16" font-weight="600">Central</text>
+      <text x="90" y="420" font-size="15" font-weight="600">Achimota</text>
+      <text x="580" y="470" font-size="15" font-weight="600">East Legon</text>
+      <text x="150" y="640" font-size="15" font-weight="600">Dzorwulu</text>
+      <text x="430" y="760" font-size="15" font-weight="600">Airport Residential</text>
+      <text x="120" y="1130" font-size="15" font-weight="600">Osu</text>
+      <text x="560" y="990" font-size="15" font-weight="600">Labone</text>
+    </g>
+    <!-- small POI dot -->
+    <circle cx="215" cy="470" r="13" fill="#4A8BC2"/><circle cx="215" cy="470" r="5.5" fill="#fff"/>
+  </svg>
+
+  <!-- route line overlay -->
+  <svg id="route"></svg>
+
+  <!-- user pin (reference-style navy teardrop) -->
+  <div class="upin" id="upin">
+    <div class="halo"></div>
+    <svg width="52" height="62" viewBox="0 0 52 62"><path d="M26 2C13 2 3 12 3 25c0 16 23 35 23 35s23-19 23-35C49 12 39 2 26 2Z" fill="#1F2A44"/><circle cx="26" cy="24" r="9" fill="#fff"/></svg>
+  </div>
+  <!-- provider markers injected here -->
+</div>
+
+<!-- ============ TOP BAR ============ -->
+<div class="top">
+  <div class="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A8F9C" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input id="searchIn" placeholder="Search services" oninput="filterSvc(this.value)">
+  </div>
+  <div class="bell" onclick="toast('No new notifications')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F2A44" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+  </div>
+</div>
+
+<!-- ============ FLOATING CARDS (invisible container) ============ -->
+<div id="cards" class="anim"></div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ============ BOTTOM SHEET ============ -->
+<div class="sheet anim" id="sheet">
+  <div class="handle" id="handle"><div class="grab"></div></div>
+  <div class="inner" id="inner">
+
+    <!-- STEP 1 -->
+    <div class="step on" id="p1">
+      <div class="loc">
+        <div class="pin"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1F2A44" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <div class="t"><div class="a" id="locTitle">Service on demand</div><div class="b" id="locSub">East Legon, Accra · NHIS accepted</div></div>
+      </div>
+      <button class="cta" id="bookBtn" disabled onclick="listProviders()">Book Care</button>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step" id="p2">
+      <h2 id="listTitle">Available now</h2>
+      <p class="sub">Verified & background-checked · tap to view on map</p>
+      <div id="provList"></div>
+      <button class="cta" id="reqBtn" disabled onclick="requestProvider()">Request</button>
+      <button class="ghost" onclick="backToHome()">Back</button>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step" id="p3">
+      <div class="track">
+        <div class="pav" id="tAva">🩺</div>
+        <div>
+          <div style="font-size:15px;font-weight:800" id="tName"></div>
+          <div style="font-size:11.5px;color:var(--mut);font-weight:500" id="tRole"></div>
+          <div style="font-size:11px;color:var(--ok);font-weight:700;margin-top:2px">✓ Verified · Licence checked</div>
+        </div>
+        <div class="etaBig"><b id="tEta">–</b><span>min away</span></div>
+      </div>
+      <div class="bar"><i id="tBar"></i></div>
+      <div class="row2">
+        <button class="ghost" onclick="toast('📞 Calling… (demo)')">Call</button>
+        <button class="ghost" onclick="toast('💬 Chat opened (demo)')">Chat</button>
+        <button class="ghost" onclick="cancelTrip()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step" id="p4" style="text-align:center">
+      <div style="font-size:42px;margin:2px 0 8px">🎉</div>
+      <h2>Ayekoo! <span id="doneName"></span> has arrived</h2>
+      <p class="sub" style="margin-top:4px">Pay after service — MTN MoMo, Telecel Cash, card or NHIS.</p>
+      <button class="cta" onclick="resetAll()">Book Another</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ------------ data ------------ */
+const I={
+  help:'<path d="M12 8c1.8 0 3-1.2 3-2.9C15 3.4 13.8 2 12 2S9 3.4 9 5.1C9 6.8 10.2 8 12 8Z"/><path d="M3.5 17c2-1.6 5-2.6 8.5-1l4.5 2c1.2.5 2.5.3 3.5-.4"/><path d="M2 20h4l5 1.5c2 .5 4 .3 6-.5l5-2"/>',
+  nurse:'<path d="M12 3v4M10 5h4"/><circle cx="12" cy="12" r="8.5"/><path d="M12 9.5v5M9.5 12h5"/>',
+  cook:'<path d="M6 13a4 4 0 0 1-1-7.9A5 5 0 0 1 14.5 4 4.5 4.5 0 0 1 18 13v7H6v-7Z"/><path d="M6 17h12"/>',
+  clean:'<path d="M14 3l-1.5 8.5M8 21l1-6.5h7L17 21H8Z"/><path d="M9.5 14.5 9 12h7l-.5 2.5"/>',
+  elder:'<circle cx="11" cy="5.5" r="2.5"/><path d="M11 8v7l3 6M11 12h4M8 21l2-6"/><path d="M17 8v13"/>',
+  aide:'<circle cx="12" cy="5" r="2.5"/><path d="M12 8v5m0 0-4 8m4-8 4 8"/><path d="M5 13h14"/>'
+};
+const SERVICES=[
+  {id:'help', nm:'House Help'},
+  {id:'nurse',nm:'Nurse'},
+  {id:'cook', nm:'Cook'},
+  {id:'clean',nm:'Cleaner'},
+  {id:'elder',nm:'Elderly Care'},
+  {id:'aide', nm:'Care Aide'},
+];
+const NAMES={
+  nurse:[['Ama Serwaa','Registered Nurse · 4.9★','👩🏾‍⚕️'],['Kojo Mensah','Physio Aide · 4.8★','👨🏿‍⚕️'],['Abena Owusu','Community Nurse · 5.0★','👩🏿‍⚕️'],['Esi Nyarko','Geriatric Nurse · 4.9★','👩🏾‍⚕️']],
+  cook:[['Auntie Akos','Home Chef · 5.0★','👩🏾‍🍳'],['Nii Armah','Home Chef · 4.8★','👨🏿‍🍳'],['Maame Efua','Local & Continental · 4.9★','👩🏿‍🍳']],
+  clean:[['Gifty Mensah','Deep Cleaning Pro · 4.9★','🧕🏾'],['Samuel Tetteh','Home & Office · 4.7★','👨🏾'],['Naa Dedei','Laundry & Cleaning · 4.8★','👩🏾']],
+  elder:[['Adwoa Baah','Elderly Companion · 4.9★','👩🏾'],['Yaw Boateng','Senior Care · 4.8★','🧑🏾'],['Akosua Dartey','Senior Care · 4.9★','👵🏾']],
+  aide:[['Kofi Asante','Guide Aide (low vision) · 4.9★','🧑🏿'],['Kwesi Appiah','Wheelchair Support · 4.7★','👨🏾']],
+  help:[['Akua Afriyie','House Help · 4.9★','👩🏾'],['Mavis Ansah','Errands & Home · 4.8★','👩🏿']],
+};
+const MICON={nurse:'🩺',cook:'🍲',clean:'🧹',elder:'🤝',aide:'🦽',help:'🏠'};
+
+/* ------------ state ------------ */
+const $=id=>document.getElementById(id);
+const R=(a,b)=>a+Math.random()*(b-a);
+let providers=[],sel=null,pick=null,trip=null,tripTimer=null,step='p1';
+const USER={x:55,y:36}; /* user pin position, % of map */
+
+/* ============ MARKERS on static map ============ */
+function boot(){
+  const mapEl=$('map');
+  $('upin').style.left=USER.x+'%';$('upin').style.top=USER.y+'%';
+  let idx=0;
+  SERVICES.forEach(s=>NAMES[s.id].forEach(n=>{
+    const pos={x:R(8,92),y:R(10,88)};
+    const d=document.createElement('div');
+    d.className='mk';d.textContent=MICON[s.id];
+    d.style.left=pos.x+'%';d.style.top=pos.y+'%';
+    mapEl.appendChild(d);
+    providers.push({i:idx++,svc:s.id,name:n[0],role:n[1],face:n[2],pos,el:d,eta:0});
+  }));
+  setInterval(()=>{ if(trip)return;
+    providers.forEach(p=>{
+      p.pos.x=Math.max(4,Math.min(96,p.pos.x+R(-.35,.35)));
+      p.pos.y=Math.max(6,Math.min(92,p.pos.y+R(-.35,.35)));
+      p.el.style.left=p.pos.x+'%';p.el.style.top=p.pos.y+'%';
+    });
+  },1200);
+}
+function drawRoute(p){
+  const w=innerWidth,h=innerHeight;
+  $('route').innerHTML=p?`<line x1="${p.pos.x/100*w}" y1="${p.pos.y/100*h}" x2="${USER.x/100*w}" y2="${USER.y/100*h}"
+    stroke="#1F2A44" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="1 9" opacity=".85"/>`:'';
+}
+
+/* ============ FLEXIBLE DRAGGABLE SHEET ============ */
+const sheet=$('sheet'),inner=$('inner'),cards=$('cards');
+let sheetH=0,snaps={},cur='mid',ty=0;
+function layoutSheet(){
+  const vh=innerHeight;
+  sheetH=Math.min(620,Math.round(vh*0.8));
+  sheet.style.height=sheetH+'px';
+  snaps={full:0, mid:sheetH-Math.min(230,Math.round(vh*0.28)), min:sheetH-118};
+  setSnap(cur,false);
+}
+function sync(animate){
+  /* cards ride just above the sheet, capped at the mid position */
+  const visible=sheetH-ty, cap=sheetH-snaps.mid;
+  cards.style.bottom=Math.min(visible,cap)+16+'px';
+  /* opacity: 0 at min → 1 at mid (only on home step) */
+  let k=(snaps.min-ty)/(snaps.min-snaps.mid); k=Math.max(0,Math.min(1,k));
+  if(step!=='p1')k=0;
+  cards.style.opacity=k;
+  cards.style.transform=`translateY(${24*(1-k)}px) scale(${.96+.04*k})`;
+  cards.style.pointerEvents=k>.6?'auto':'none';
+}
+function setSnap(name,animate=true){
+  cur=name;ty=snaps[name];
+  sheet.classList.toggle('anim',animate);
+  cards.classList.toggle('anim',animate);
+  sheet.style.transform=`translateY(${ty}px)`;
+  inner.classList.toggle('scroll',name==='full');
+  if(name!=='full')inner.scrollTop=0;
+  sync(animate);
+}
+let drag=null;
+sheet.addEventListener('pointerdown',e=>{
+  if(cur==='full'&&inner.scrollTop>0)return;
+  drag={y0:e.clientY,ty0:ty,moved:false};
+  sheet.classList.remove('anim');cards.classList.remove('anim');
+});
+addEventListener('pointermove',e=>{
+  if(!drag)return;
+  const dy=e.clientY-drag.y0;
+  if(Math.abs(dy)>8)drag.moved=true;
+  if(!drag.moved)return;
+  ty=Math.max(snaps.full,Math.min(snaps.min,drag.ty0+dy));
+  sheet.style.transform=`translateY(${ty}px)`;
+  sync(false);
+});
+addEventListener('pointerup',()=>{
+  if(!drag)return;
+  const moved=drag.moved;drag=null;
+  if(!moved)return;
+  let best='mid',bd=1e9;
+  ['full','mid','min'].forEach(n=>{const d=Math.abs(snaps[n]-ty);if(d<bd){bd=d;best=n;}});
+  setSnap(best);
+});
+$('handle').addEventListener('click',()=>setSnap(cur==='min'?'mid':cur==='mid'?'full':'min'));
+addEventListener('resize',()=>{layoutSheet();drawRoute(trip);});
+
+/* ============ UI ============ */
+function renderSvcs(list){
+  cards.innerHTML=list.map(s=>`
+    <div class="svc ${sel===s.id?'sel':''}" onclick="pickSvc('${s.id}')">
+      <div class="ic"><svg viewBox="0 0 24 24">${I[s.id]}</svg></div>
+      <div class="nm">${s.nm}</div>
+    </div>`).join('');
+}
+function filterSvc(q){
+  q=q.trim().toLowerCase();
+  renderSvcs(q?SERVICES.filter(s=>s.nm.toLowerCase().includes(q)):SERVICES);
+  if(cur==='min')setSnap('mid');
+}
+function pickSvc(id){
+  sel=id;renderSvcs(SERVICES);
+  const b=$('bookBtn');b.disabled=false;
+  b.textContent=`Book ${SERVICES.find(s=>s.id===id).nm}`;
+  $('locTitle').textContent=SERVICES.find(s=>s.id===id).nm+' on demand';
+}
+function go(p){step=p;document.querySelectorAll('.step').forEach(e=>e.classList.remove('on'));$(p).classList.add('on');sync(true);}
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200);}
+const dist=p=>Math.hypot(p.pos.x-USER.x,p.pos.y-USER.y);
+
+function listProviders(){
+  const list=providers.filter(p=>p.svc===sel).map(p=>{p.eta=Math.max(3,Math.round(dist(p)*0.45));return p;}).sort((a,b)=>a.eta-b.eta);
+  $('listTitle').textContent=`${SERVICES.find(s=>s.id===sel).nm}s available now`;
+  $('provList').innerHTML=list.map(p=>`
+    <div class="prov" id="pv${p.i}" onclick="pickProv(${p.i})">
+      <div class="pav">${p.face}</div>
+      <div class="info"><div class="n">${p.name}<span class="vbadge">VERIFIED</span></div><div class="d">${p.role}</div></div>
+      <div class="eta"><b>${p.eta}</b><span>min</span></div>
+    </div>`).join('');
+  pick=null;$('reqBtn').disabled=true;$('reqBtn').textContent='Request';
+  go('p2');setSnap('full');
+}
+function backToHome(){go('p1');setSnap('mid');}
+function pickProv(i){
+  pick=providers.find(p=>p.i===i);
+  document.querySelectorAll('.prov').forEach(e=>e.classList.remove('sel'));
+  $('pv'+i).classList.add('sel');
+  document.querySelectorAll('.mk').forEach(e=>e.classList.remove('active'));
+  pick.el.classList.add('active');
+  setSnap('mid');
+  $('reqBtn').disabled=false;$('reqBtn').textContent=`Request ${pick.name.split(' ')[0]} · ${pick.eta} min`;
+}
+
+/* ============ trip ============ */
+function requestProvider(){
+  if(!pick)return;trip=pick;
+  $('tAva').textContent=trip.face;$('tName').textContent=trip.name;$('tRole').textContent=trip.role;
+  go('p3');setSnap('mid');drawRoute(trip);
+  toast(`${trip.name.split(' ')[0]} accepted your request ✓`);
+  const start={...trip.pos},total=trip.eta*600,t0=Date.now();
+  tripTimer=setInterval(()=>{
+    const k=Math.min(1,(Date.now()-t0)/total);
+    trip.pos.x=start.x+(USER.x-start.x)*k;
+    trip.pos.y=start.y+(USER.y-start.y)*k;
+    trip.el.style.left=trip.pos.x+'%';trip.el.style.top=trip.pos.y+'%';
+    drawRoute(trip);
+    $('tEta').textContent=Math.max(0,Math.ceil(trip.eta*(1-k)));
+    $('tBar').style.width=(k*100)+'%';
+    if(k>=1){clearInterval(tripTimer);arrived();}
+  },400);
+}
+function arrived(){
+  drawRoute(null);
+  $('doneName').textContent=trip.name;
+  trip.el.classList.remove('active');trip=null;
+  go('p4');setSnap('mid');confetti();
+}
+function cancelTrip(){
+  if(tripTimer)clearInterval(tripTimer);
+  drawRoute(null);
+  if(trip){trip.el.classList.remove('active');trip=null;}
+  toast('Booking cancelled');backToHome();
+}
+function resetAll(){
+  sel=null;pick=null;renderSvcs(SERVICES);
+  $('bookBtn').disabled=true;$('bookBtn').textContent='Book Care';
+  $('locTitle').textContent='Service on demand';
+  backToHome();
+}
+function confetti(){
+  const cols=['#1F2A44','#4A8BC2','#1FA97A','#FFB020'];
+  for(let i=0;i<70;i++){
+    const c=document.createElement('div');
+    c.style.cssText=`position:fixed;top:-16px;left:${Math.random()*100}vw;width:9px;height:13px;z-index:99;background:${cols[i%4]};border-radius:${Math.random()>.5?'99px':'2px'};animation:cf ${2+Math.random()*2}s ${Math.random()*.7}s linear forwards`;
+    document.body.appendChild(c);setTimeout(()=>c.remove(),5200);
+  }
+}
+const st=document.createElement('style');st.textContent='@keyframes cf{to{transform:translateY(105vh) rotate(720deg)}}';document.head.appendChild(st);
+
+/* init */
+renderSvcs(SERVICES);
+boot();
+layoutSheet();
+setSnap('mid',false);
+</script>
+</body>
+</html>
