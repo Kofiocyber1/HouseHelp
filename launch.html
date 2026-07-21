@@ -57,6 +57,12 @@ nav{position:fixed;top:6px;left:0;right:0;z-index:50;display:flex;justify-conten
 .slide video,.slide img{width:100%;height:100%;object-fit:cover}
 .hero .veil{position:absolute;inset:0;z-index:1;
   background:linear-gradient(180deg,color-mix(in srgb,var(--navy) 78%,transparent) 0%,color-mix(in srgb,var(--navy) 45%,transparent) 45%,var(--navy) 100%)}
+/* light mode: no tint — show the video as-is, only a small fade at the bottom edge */
+html[data-theme="light"] .hero .veil{background:linear-gradient(180deg,transparent 0%,transparent 78%,var(--navy) 100%)}
+html[data-theme="light"] .hero h1{color:#FFFFFF;text-shadow:0 2px 22px rgba(0,0,0,.65)}
+html[data-theme="light"] .hero .sub{color:#EDF2F8;text-shadow:0 1px 14px rgba(0,0,0,.6)}
+html[data-theme="light"] .hero .stat b{text-shadow:0 1px 12px rgba(0,0,0,.5)}
+html[data-theme="light"] .hero .stat span{color:#D9E2EE;text-shadow:0 1px 10px rgba(0,0,0,.55)}
 .hero .inner{position:relative;z-index:2;max-width:860px;padding:120px 6vw 80px}
 .chip{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line);background:color-mix(in srgb,var(--panel) 75%,transparent);
   backdrop-filter:blur(8px);border-radius:99px;padding:9px 18px;font-size:13px;font-weight:600;color:var(--cyan)}
