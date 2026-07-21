@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>House Help — Care & Home Services, On Demand</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1F2A44;
+  --blue:#4A8BC2;
+  --bg:#F4F2ED;
+  --card:#FFFFFF;
+  --mut:#8A8F9C;
+  --ok:#1FA97A;
+  --shadow:0 10px 30px rgba(31,42,68,.14);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);height:100dvh;overflow:hidden;overscroll-behavior:none}
+
+/* ================= LIVE MAP ================= */
+#map{position:fixed;inset:0}
+.mk{width:38px;height:38px;border-radius:13px;background:#fff;
+  box-shadow:0 4px 14px rgba(31,42,68,.25);display:flex;align-items:center;justify-content:center;font-size:17px;
+  transition:box-shadow .2s;border:1.5px solid transparent}
+.mk.active{background:var(--ink);border-color:var(--ink);box-shadow:0 6px 20px rgba(31,42,68,.5)}
+.upin{position:relative;pointer-events:none}
+.upin .halo{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);width:26px;height:10px;border-radius:99px;background:rgba(31,42,68,.22);animation:halo 2s infinite}
+@keyframes halo{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.35)}}
+
+/* ================= TOP BAR ================= */
+.top{position:fixed;top:0;left:0;right:0;z-index:20;padding:14px 16px;display:flex;gap:10px;align-items:center}
+.search{flex:1;display:flex;align-items:center;gap:10px;background:var(--card);border-radius:99px;padding:14px 18px;box-shadow:var(--shadow)}
+.search input{border:none;outline:none;font:600 14px 'Plus Jakarta Sans';color:var(--ink);width:100%;background:transparent}
+.search input::placeholder{color:var(--mut);font-weight:500}
+.bell{width:48px;height:48px;border-radius:99px;background:var(--card);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+
+/* ================= FLOATING SERVICE CARDS ================= */
+#cards{position:fixed;left:18px;right:18px;z-index:15;max-width:444px;margin:0 auto;
+  display:grid;grid-template-columns:1fr 1fr;gap:13px;pointer-events:none;
+  opacity:0;transform:translateY(24px) scale(.96)}
+#cards.anim{transition:opacity .28s ease,transform .28s ease,bottom .3s cubic-bezier(.2,.9,.25,1)}
+.svc{pointer-events:auto;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);border-radius:26px;padding:20px 12px 16px;
+  text-align:center;cursor:pointer;box-shadow:0 12px 30px rgba(31,42,68,.18);transition:transform .15s ease,background .2s}
+.svc:active{transform:scale(.96)}
+.svc .ic{height:44px;display:flex;align-items:center;justify-content:center}
+.svc .ic svg{width:38px;height:38px;stroke:var(--ink);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.svc .nm{font-size:15px;font-weight:800;margin-top:8px}
+.svc.sel{background:var(--ink)}
+.svc.sel .ic svg{stroke:#fff}
+.svc.sel .nm{color:#fff}
+.svc:nth-child(even){transform:translateY(14px)}
+.svc:nth-child(even):active{transform:translateY(14px) scale(.96)}
+.svc.sel:nth-child(even){transform:translateY(14px)}
+
+/* ================= BOTTOM SHEET ================= */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:480px;margin:0 auto;background:var(--card);
+  border-radius:30px 30px 0 0;box-shadow:0 -14px 44px rgba(31,42,68,.20);touch-action:none;will-change:transform}
+.sheet.anim{transition:transform .3s cubic-bezier(.2,.9,.25,1)}
+.handle{padding:12px 0 8px;cursor:grab}
+.grab{width:46px;height:5px;border-radius:99px;background:#E2E0DA;margin:0 auto}
+.inner{padding:0 20px calc(18px + env(safe-area-inset-bottom));overflow:hidden;height:calc(100% - 30px)}
+.inner.scroll{overflow-y:auto;touch-action:pan-y}
+.step{display:none;animation:up .3s ease both}
+.step.on{display:block}
+@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+h2{font-size:17px;font-weight:800}
+.sub{font-size:12.5px;color:var(--mut);font-weight:500;margin-top:2px;margin-bottom:13px}
+
+.loc{display:flex;align-items:center;gap:12px;padding:4px 2px 6px}
+.loc .pin{width:40px;height:40px;border-radius:99px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex:none}
+.loc .t{flex:1;min-width:0}
+.loc .a{font-size:14px;font-weight:800}
+.loc .b{font-size:11.5px;color:var(--mut);font-weight:500;margin-top:1px}
+
+.cta{width:100%;margin-top:12px;padding:17px;border:none;border-radius:99px;cursor:pointer;
+  font:700 15.5px 'Plus Jakarta Sans';color:#fff;background:var(--blue);box-shadow:0 10px 26px rgba(74,139,194,.45);transition:.15s}
+.cta:active{transform:scale(.98)}
+.cta:disabled{opacity:.4;box-shadow:none}
+.ghost{width:100%;margin-top:10px;padding:14px;border-radius:99px;border:none;background:var(--bg);color:var(--ink);font:700 13px 'Plus Jakarta Sans';cursor:pointer}
+.field{width:100%;margin-top:8px;padding:15px 18px;border-radius:18px;border:1.5px solid #E2E0DA;background:var(--bg);font:600 15px 'Plus Jakarta Sans';color:var(--ink);outline:none}
+.field:focus{border-color:var(--blue);background:#fff}
+
+/* providers */
+.prov{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:20px;padding:12px 14px;margin-bottom:9px;cursor:pointer;border:1.5px solid transparent;transition:.15s}
+.prov.sel{border-color:var(--blue);background:#fff;box-shadow:var(--shadow)}
+.pav{width:44px;height:44px;border-radius:99px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:21px;flex:none;box-shadow:0 2px 8px rgba(31,42,68,.08)}
+.prov.sel .pav{background:var(--bg)}
+.prov .info{flex:1;min-width:0}
+.prov .n{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:6px}
+.prov .d{font-size:11px;color:var(--mut);font-weight:500;margin-top:1px}
+.vbadge{font-size:8.5px;font-weight:800;color:var(--ok);border:1px solid rgba(31,169,122,.35);border-radius:6px;padding:1.5px 5px;letter-spacing:.3px}
+.prov .eta{text-align:right;flex:none}
+.prov .eta b{font-size:15px}
+.prov .eta span{display:block;font-size:10px;color:var(--mut);font-weight:600}
+
+/* tracking */
+.track{display:flex;align-items:center;gap:13px;margin-bottom:4px}
+.track .pav{width:54px;height:54px;font-size:26px}
+.etaBig{margin-left:auto;text-align:right}
+.etaBig b{font-size:26px}
+.etaBig span{display:block;font-size:10.5px;color:var(--mut);font-weight:600}
+.bar{height:6px;border-radius:99px;background:var(--bg);overflow:hidden;margin:13px 0}
+.bar i{display:block;height:100%;width:0%;border-radius:99px;background:var(--blue);transition:width .8s linear}
+.row2{display:flex;gap:9px}
+.row2 .ghost{margin-top:0}
+
+/* toast */
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:50;background:var(--ink);color:#fff;
+  font-size:12.5px;font-weight:600;padding:11px 18px;border-radius:99px;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- ============ TOP BAR ============ -->
+<div class="top">
+  <div class="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A8F9C" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input id="searchIn" placeholder="Search services" oninput="filterSvc(this.value)">
+  </div>
+  <div class="bell" onclick="toast('No new notifications')">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F2A44" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+  </div>
+</div>
+
+<!-- ============ FLOATING CARDS (invisible container) ============ -->
+<div id="cards" class="anim"></div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ============ BOTTOM SHEET ============ -->
+<div class="sheet anim" id="sheet">
+  <div class="handle" id="handle"><div class="grab"></div></div>
+  <div class="inner" id="inner">
+
+    <!-- STEP 1 -->
+    <div class="step on" id="p1">
+      <div class="loc">
+        <div class="pin"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1F2A44" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <div class="t"><div class="a" id="locTitle">Service on demand</div><div class="b" id="locSub">Finding your location… · NHIS accepted</div></div>
+      </div>
+      <button class="cta" id="bookBtn" disabled onclick="listProviders()">Book Care</button>
+    </div>
+
+    <!-- AUTH STEP 1: email -->
+    <div class="step" id="pA1">
+      <h2>Sign in to book</h2>
+      <p class="sub">We'll email you a 6-digit code — no password needed.</p>
+      <input class="field" id="authEmail" type="email" inputmode="email" placeholder="you@email.com">
+      <button class="cta" onclick="sendCode()" id="sendBtn">Send Code</button>
+      <button class="ghost" onclick="backToHome()">Cancel</button>
+    </div>
+
+    <!-- AUTH STEP 2: code -->
+    <div class="step" id="pA2">
+      <h2>Enter the code</h2>
+      <p class="sub" id="codeSub">Check your email inbox</p>
+      <input class="field" id="authCode" inputmode="numeric" maxlength="6" placeholder="6-digit code" style="letter-spacing:4px;text-align:center">
+      <button class="cta" onclick="verifyCode()" id="verifyBtn">Verify & Continue</button>
+      <button class="ghost" onclick="go('pA1')">Back</button>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step" id="p2">
+      <h2 id="listTitle">Available now</h2>
+      <p class="sub">Verified & background-checked · tap to view on map</p>
+      <div id="provList"></div>
+      <button class="cta" id="reqBtn" disabled onclick="requestProvider()">Request</button>
+      <button class="ghost" onclick="backToHome()">Back</button>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step" id="p3">
+      <div class="track">
+        <div class="pav" id="tAva">🩺</div>
+        <div>
+          <div style="font-size:15px;font-weight:800" id="tName"></div>
+          <div style="font-size:11.5px;color:var(--mut);font-weight:500" id="tRole"></div>
+          <div style="font-size:11px;color:var(--ok);font-weight:700;margin-top:2px">✓ Verified · Licence checked</div>
+        </div>
+        <div class="etaBig"><b id="tEta">–</b><span>min away</span></div>
+      </div>
+      <div class="bar"><i id="tBar"></i></div>
+      <div class="row2">
+        <button class="ghost" onclick="toast('📞 Calling… (demo)')">Call</button>
+        <button class="ghost" onclick="toast('💬 Chat opened (demo)')">Chat</button>
+        <button class="ghost" onclick="cancelTrip()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step" id="p4" style="text-align:center">
+      <div style="font-size:42px;margin:2px 0 8px">🎉</div>
+      <h2>Ayekoo! <span id="doneName"></span> has arrived</h2>
+      <p class="sub" style="margin-top:4px">Pay after service — MTN MoMo, Telecel Cash, card or NHIS.</p>
+      <button class="cta" onclick="resetAll()">Book Another</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* ------------ Supabase ------------ */
+const SB_URL='https://wgzlcftxkrohiwxwbgaw.supabase.co';
+const SB_KEY='sb_publishable_nV3n7aZ74z9YdZ4shmdiCg_DA0mrODn';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+let session=null,bookingId=null,pendingReq=false;
+sb.auth.getSession().then(({data})=>{session=data.session;});
+sb.auth.onAuthStateChange((_e,s)=>{session=s;});
+const SVC2DB={nurse:'nurse',cook:'cook',clean:'cleaner',elder:'elderly_care',aide:'care_aide',help:'house_help'};
+const DB2SVC={nurse:'nurse',cook:'cook',cleaner:'clean',elderly_care:'elder',care_aide:'aide',house_help:'help'};
+
+/* ------------ data ------------ */
+const I={
+  help:'<path d="M12 8c1.8 0 3-1.2 3-2.9C15 3.4 13.8 2 12 2S9 3.4 9 5.1C9 6.8 10.2 8 12 8Z"/><path d="M3.5 17c2-1.6 5-2.6 8.5-1l4.5 2c1.2.5 2.5.3 3.5-.4"/><path d="M2 20h4l5 1.5c2 .5 4 .3 6-.5l5-2"/>',
+  nurse:'<path d="M12 3v4M10 5h4"/><circle cx="12" cy="12" r="8.5"/><path d="M12 9.5v5M9.5 12h5"/>',
+  cook:'<path d="M6 13a4 4 0 0 1-1-7.9A5 5 0 0 1 14.5 4 4.5 4.5 0 0 1 18 13v7H6v-7Z"/><path d="M6 17h12"/>',
+  clean:'<path d="M14 3l-1.5 8.5M8 21l1-6.5h7L17 21H8Z"/><path d="M9.5 14.5 9 12h7l-.5 2.5"/>',
+  elder:'<circle cx="11" cy="5.5" r="2.5"/><path d="M11 8v7l3 6M11 12h4M8 21l2-6"/><path d="M17 8v13"/>',
+  aide:'<circle cx="12" cy="5" r="2.5"/><path d="M12 8v5m0 0-4 8m4-8 4 8"/><path d="M5 13h14"/>'
+};
+const SERVICES=[
+  {id:'help', nm:'House Help'},
+  {id:'nurse',nm:'Nurse'},
+  {id:'cook', nm:'Cook'},
+  {id:'clean',nm:'Cleaner'},
+  {id:'elder',nm:'Elderly Care'},
+  {id:'aide', nm:'Care Aide'},
+];
+const NAMES={
+  nurse:[['Ama Serwaa','Registered Nurse · 4.9★','👩🏾‍⚕️'],['Kojo Mensah','Physio Aide · 4.8★','👨🏿‍⚕️'],['Abena Owusu','Community Nurse · 5.0★','👩🏿‍⚕️'],['Esi Nyarko','Geriatric Nurse · 4.9★','👩🏾‍⚕️']],
+  cook:[['Auntie Akos','Home Chef · 5.0★','👩🏾‍🍳'],['Nii Armah','Home Chef · 4.8★','👨🏿‍🍳'],['Maame Efua','Local & Continental · 4.9★','👩🏿‍🍳']],
+  clean:[['Gifty Mensah','Deep Cleaning Pro · 4.9★','🧕🏾'],['Samuel Tetteh','Home & Office · 4.7★','👨🏾'],['Naa Dedei','Laundry & Cleaning · 4.8★','👩🏾']],
+  elder:[['Adwoa Baah','Elderly Companion · 4.9★','👩🏾'],['Yaw Boateng','Senior Care · 4.8★','🧑🏾'],['Akosua Dartey','Senior Care · 4.9★','👵🏾']],
+  aide:[['Kofi Asante','Guide Aide (low vision) · 4.9★','🧑🏿'],['Kwesi Appiah','Wheelchair Support · 4.7★','👨🏾']],
+  help:[['Akua Afriyie','House Help · 4.9★','👩🏾'],['Mavis Ansah','Errands & Home · 4.8★','👩🏿']],
+};
+const MICON={nurse:'🩺',cook:'🍲',clean:'🧹',elder:'🤝',aide:'🦽',help:'🏠'};
+
+/* ------------ state ------------ */
+const $=id=>document.getElementById(id);
+const R=(a,b)=>a+Math.random()*(b-a);
+let map,user={lat:5.6037,lng:-0.1870},providers=[],sel=null,pick=null,trip=null,line=null,tripTimer=null,step='p1',started=false;
+
+/* ============ LIVE GOOGLE MAP ============ */
+function initMap(){
+  map=new google.maps.Map($('map'),{center:{lat:user.lat-0.004,lng:user.lng},zoom:15,disableDefaultUI:true,gestureHandling:'greedy',clickableIcons:false});
+  if(navigator.geolocation)navigator.geolocation.getCurrentPosition(
+    p=>{user={lat:p.coords.latitude,lng:p.coords.longitude};map.setCenter({lat:user.lat-0.004,lng:user.lng});$('locSub').textContent='Your live location · NHIS accepted';boot();},
+    ()=>{$('locSub').textContent='Accra (default) · NHIS accepted';boot();},{timeout:5000});
+  else{$('locSub').textContent='Accra (default) · NHIS accepted';boot();}
+  setTimeout(()=>{if(!started)boot();},5500);
+}
+function ovMarker(pos,html){
+  const o=new google.maps.OverlayView();o.pos=pos;
+  o.onAdd=function(){this.div=document.createElement('div');this.div.style.cssText='position:absolute;transform:translate(-50%,-50%)';this.div.innerHTML=html;this.getPanes().overlayMouseTarget.appendChild(this.div);};
+  o.draw=function(){if(!this.div)return;const pr=this.getProjection();if(!pr)return;const p=pr.fromLatLngToDivPixel(new google.maps.LatLng(this.pos));this.div.style.left=p.x+'px';this.div.style.top=p.y+'px';};
+  o.move=function(pos){this.pos=pos;this.draw();};
+  o.el=function(){return this.div};
+  o.setMap(map);return o;
+}
+function boot(){
+  if(started)return;started=true;
+  ovMarker(user,`<div class="upin"><div class="halo"></div><svg width="52" height="62" viewBox="0 0 52 62" style="transform:translateY(-40%)"><path d="M26 2C13 2 3 12 3 25c0 16 23 35 23 35s23-19 23-35C49 12 39 2 26 2Z" fill="#1F2A44"/><circle cx="26" cy="24" r="9" fill="#fff"/></svg></div>`);
+  let idx=0;
+  SERVICES.forEach(s=>NAMES[s.id].forEach(n=>{
+    const pos={lat:user.lat+R(-.012,.012),lng:user.lng+R(-.012,.012)};
+    const m=ovMarker(pos,`<div class="mk">${MICON[s.id]}</div>`);
+    providers.push({i:idx++,svc:s.id,name:n[0],role:n[1],face:n[2],pos,m,eta:0});
+  }));
+  setInterval(()=>{ if(trip)return;
+    providers.forEach(p=>{
+      if(p.real)return; /* real providers stay at their reported location */
+      p.pos={lat:p.pos.lat+R(-.0004,.0004),lng:p.pos.lng+R(-.0004,.0004)};
+      p.m.move(p.pos);
+    });
+  },1200);
+  loadRealProviders();
+}
+async function loadRealProviders(){
+  try{
+    const {data,error}=await sb.from('hh_providers')
+      .select('id,service,rating,jobs_completed,license_verified,lat,lng,is_online,hh_profiles(full_name)');
+    if(error||!data)return;
+    let idx=providers.length;
+    data.filter(r=>r.is_online).forEach(r=>{
+      const svcId=DB2SVC[r.service];if(!svcId)return;
+      const pos={lat:r.lat??user.lat+R(-.01,.01),lng:r.lng??user.lng+R(-.01,.01)};
+      const m=ovMarker(pos,`<div class="mk">${MICON[svcId]}</div>`);
+      providers.push({i:idx++,svc:svcId,real:true,dbId:r.id,
+        name:(r.hh_profiles&&r.hh_profiles.full_name)||'Provider',
+        role:`${SERVICES.find(s=>s.id===svcId).nm} · ${r.rating}★ · ${r.jobs_completed} jobs`,
+        face:MICON[svcId],verified:r.license_verified,pos,m,eta:0});
+    });
+  }catch(e){/* offline or RLS issue — demo helpers still work */}
+}
+function drawRoute(on){
+  if(line){line.setMap(null);line=null;}
+  if(on&&trip){
+    line=new google.maps.Polyline({path:[trip.pos,user],map,strokeOpacity:0,strokeWeight:3.5,
+      icons:[{icon:{path:'M 0,-1 0,1',strokeOpacity:.85,strokeWeight:3.5,strokeColor:'#1F2A44',scale:2},offset:'0',repeat:'14px'}]});
+  }
+}
+
+/* ============ FLEXIBLE DRAGGABLE SHEET ============ */
+const sheet=$('sheet'),inner=$('inner'),cards=$('cards');
+let sheetH=0,snaps={},cur='mid',ty=0;
+function layoutSheet(){
+  const vh=innerHeight;
+  sheetH=Math.min(620,Math.round(vh*0.8));
+  sheet.style.height=sheetH+'px';
+  snaps={full:0, mid:sheetH-Math.min(230,Math.round(vh*0.28)), min:sheetH-118};
+  setSnap(cur,false);
+}
+function sync(animate){
+  const visible=sheetH-ty, cap=sheetH-snaps.mid;
+  cards.style.bottom=Math.min(visible,cap)+16+'px';
+  let k=(snaps.min-ty)/(snaps.min-snaps.mid); k=Math.max(0,Math.min(1,k));
+  if(step!=='p1')k=0;
+  cards.style.opacity=k;
+  cards.style.transform=`translateY(${24*(1-k)}px) scale(${.96+.04*k})`;
+  cards.style.pointerEvents=k>.6?'auto':'none';
+}
+function setSnap(name,animate=true){
+  cur=name;ty=snaps[name];
+  sheet.classList.toggle('anim',animate);
+  cards.classList.toggle('anim',animate);
+  sheet.style.transform=`translateY(${ty}px)`;
+  inner.classList.toggle('scroll',name==='full');
+  if(name!=='full')inner.scrollTop=0;
+  sync(animate);
+}
+let drag=null;
+sheet.addEventListener('pointerdown',e=>{
+  if(cur==='full'&&inner.scrollTop>0)return;
+  drag={y0:e.clientY,ty0:ty,moved:false};
+  sheet.classList.remove('anim');cards.classList.remove('anim');
+});
+addEventListener('pointermove',e=>{
+  if(!drag)return;
+  const dy=e.clientY-drag.y0;
+  if(Math.abs(dy)>8)drag.moved=true;
+  if(!drag.moved)return;
+  ty=Math.max(snaps.full,Math.min(snaps.min,drag.ty0+dy));
+  sheet.style.transform=`translateY(${ty}px)`;
+  sync(false);
+});
+addEventListener('pointerup',()=>{
+  if(!drag)return;
+  const moved=drag.moved;drag=null;
+  if(!moved)return;
+  let best='mid',bd=1e9;
+  ['full','mid','min'].forEach(n=>{const d=Math.abs(snaps[n]-ty);if(d<bd){bd=d;best=n;}});
+  setSnap(best);
+});
+$('handle').addEventListener('click',()=>setSnap(cur==='min'?'mid':cur==='mid'?'full':'min'));
+addEventListener('resize',layoutSheet);
+
+/* ============ UI ============ */
+function renderSvcs(list){
+  cards.innerHTML=list.map(s=>`
+    <div class="svc ${sel===s.id?'sel':''}" onclick="pickSvc('${s.id}')">
+      <div class="ic"><svg viewBox="0 0 24 24">${I[s.id]}</svg></div>
+      <div class="nm">${s.nm}</div>
+    </div>`).join('');
+}
+function filterSvc(q){
+  q=q.trim().toLowerCase();
+  renderSvcs(q?SERVICES.filter(s=>s.nm.toLowerCase().includes(q)):SERVICES);
+  if(cur==='min')setSnap('mid');
+}
+function pickSvc(id){
+  sel=id;renderSvcs(SERVICES);
+  const b=$('bookBtn');b.disabled=false;
+  b.textContent=`Book ${SERVICES.find(s=>s.id===id).nm}`;
+  $('locTitle').textContent=SERVICES.find(s=>s.id===id).nm+' on demand';
+}
+function go(p){step=p;document.querySelectorAll('.step').forEach(e=>e.classList.remove('on'));$(p).classList.add('on');sync(true);}
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200);}
+const dist=p=>Math.hypot(p.pos.lat-user.lat,p.pos.lng-user.lng);
+
+function listProviders(){
+  const list=providers.filter(p=>p.svc===sel).map(p=>{p.eta=Math.max(3,Math.round(dist(p)*111000/300));return p;}).sort((a,b)=>a.eta-b.eta);
+  $('listTitle').textContent=`${SERVICES.find(s=>s.id===sel).nm}s available now`;
+  list.sort((a,b)=>(b.real?1:0)-(a.real?1:0)); /* real providers first */
+  $('provList').innerHTML=list.map(p=>{
+    const badge=p.real?(p.verified?'VERIFIED':'NEW'):'DEMO';
+    return `
+    <div class="prov" id="pv${p.i}" onclick="pickProv(${p.i})">
+      <div class="pav">${p.face}</div>
+      <div class="info"><div class="n">${p.name}<span class="vbadge">${badge}</span></div><div class="d">${p.role}</div></div>
+      <div class="eta"><b>${p.eta}</b><span>min</span></div>
+    </div>`}).join('');
+  pick=null;$('reqBtn').disabled=true;$('reqBtn').textContent='Request';
+  go('p2');setSnap('full');
+}
+function backToHome(){go('p1');setSnap('mid');}
+function pickProv(i){
+  pick=providers.find(p=>p.i===i);
+  document.querySelectorAll('.prov').forEach(e=>e.classList.remove('sel'));
+  $('pv'+i).classList.add('sel');
+  document.querySelectorAll('.mk').forEach(e=>e.classList.remove('active'));
+  const el=pick.m.el();if(el&&el.firstChild)el.firstChild.classList.add('active');
+  if(map)map.panTo(pick.pos);
+  setSnap('mid');
+  $('reqBtn').disabled=false;$('reqBtn').textContent=`Request ${pick.name.split(' ')[0]} · ${pick.eta} min`;
+}
+
+/* ============ auth ============ */
+async function sendCode(){
+  const email=$('authEmail').value.trim();
+  if(!email||!email.includes('@'))return toast('Enter a valid email');
+  $('sendBtn').disabled=true;$('sendBtn').textContent='Sending…';
+  const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true}});
+  $('sendBtn').disabled=false;$('sendBtn').textContent='Send Code';
+  if(error)return toast(error.message);
+  $('codeSub').textContent='Code sent to '+email;
+  go('pA2');setSnap('full');
+}
+async function verifyCode(){
+  const email=$('authEmail').value.trim(),code=$('authCode').value.trim();
+  if(code.length<6)return toast('Enter the 6-digit code');
+  $('verifyBtn').disabled=true;$('verifyBtn').textContent='Verifying…';
+  const {data,error}=await sb.auth.verifyOtp({email,token:code,type:'email'});
+  $('verifyBtn').disabled=false;$('verifyBtn').textContent='Verify & Continue';
+  if(error)return toast(error.message);
+  session=data.session;toast('Signed in ✓');
+  if(pendingReq){pendingReq=false;requestProvider();}else backToHome();
+}
+
+/* ============ booking records ============ */
+async function createBooking(){
+  try{
+    const {data,error}=await sb.from('hh_bookings').insert({
+      customer_id:session.user.id,
+      provider_id:trip.real?trip.dbId:null,
+      service:SVC2DB[sel],
+      status:'requested',
+      address:'Pinned location',
+      lat:user.lat,lng:user.lng,
+      nhis_used:false
+    }).select('id').single();
+    if(!error&&data)bookingId=data.id;
+  }catch(e){}
+}
+async function setBookingStatus(status){
+  if(!bookingId)return;
+  try{await sb.from('hh_bookings').update({status}).eq('id',bookingId);}catch(e){}
+  if(status==='completed'||status==='cancelled')bookingId=null;
+}
+
+/* ============ trip ============ */
+function requestProvider(){
+  if(!pick)return;
+  if(!session){pendingReq=true;go('pA1');setSnap('full');return;}
+  trip=pick;
+  createBooking();
+  $('tAva').textContent=trip.face;$('tName').textContent=trip.name;$('tRole').textContent=trip.role;
+  go('p3');setSnap('mid');drawRoute(true);
+  if(map){const b=new google.maps.LatLngBounds();b.extend(trip.pos);b.extend(user);map.fitBounds(b,90);}
+  toast(`${trip.name.split(' ')[0]} accepted your request ✓`);
+  const start={...trip.pos},total=trip.eta*600,t0=Date.now();
+  tripTimer=setInterval(()=>{
+    const k=Math.min(1,(Date.now()-t0)/total);
+    trip.pos={lat:start.lat+(user.lat-start.lat)*k,lng:start.lng+(user.lng-start.lng)*k};
+    trip.m.move(trip.pos);
+    if(line)line.setPath([trip.pos,user]);
+    $('tEta').textContent=Math.max(0,Math.ceil(trip.eta*(1-k)));
+    $('tBar').style.width=(k*100)+'%';
+    if(k>=1){clearInterval(tripTimer);arrived();}
+  },400);
+}
+function arrived(){
+  drawRoute(false);
+  $('doneName').textContent=trip.name;
+  const el=trip.m.el();if(el&&el.firstChild)el.firstChild.classList.remove('active');
+  trip=null;
+  setBookingStatus('completed');
+  go('p4');setSnap('mid');confetti();
+}
+function cancelTrip(){
+  if(tripTimer)clearInterval(tripTimer);
+  drawRoute(false);
+  if(trip){const el=trip.m.el();if(el&&el.firstChild)el.firstChild.classList.remove('active');trip=null;}
+  setBookingStatus('cancelled');
+  toast('Booking cancelled');backToHome();
+}
+function resetAll(){
+  sel=null;pick=null;renderSvcs(SERVICES);
+  $('bookBtn').disabled=true;$('bookBtn').textContent='Book Care';
+  $('locTitle').textContent='Service on demand';
+  if(map){map.panTo({lat:user.lat-0.004,lng:user.lng});map.setZoom(15);}
+  backToHome();
+}
+function confetti(){
+  const cols=['#1F2A44','#4A8BC2','#1FA97A','#FFB020'];
+  for(let i=0;i<70;i++){
+    const c=document.createElement('div');
+    c.style.cssText=`position:fixed;top:-16px;left:${Math.random()*100}vw;width:9px;height:13px;z-index:99;background:${cols[i%4]};border-radius:${Math.random()>.5?'99px':'2px'};animation:cf ${2+Math.random()*2}s ${Math.random()*.7}s linear forwards`;
+    document.body.appendChild(c);setTimeout(()=>c.remove(),5200);
+  }
+}
+const st=document.createElement('style');st.textContent='@keyframes cf{to{transform:translateY(105vh) rotate(720deg)}}';document.head.appendChild(st);
+
+/* init */
+renderSvcs(SERVICES);
+layoutSheet();
+setSnap('mid',false);
+</script>
+<script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC7teOyzCVKPJ3y2I6Ei0f8KljggOWf4ws&callback=initMap"></script>
+</body>
+</html>
