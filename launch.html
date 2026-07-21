@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HouseHelp — Trusted Care & Home Services, On Demand · Ghana</title>
+<meta name="description" content="Book verified nurses, elderly care, cooks, cleaners and house help to your door in Ghana. Join the waitlist.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* ============ THEME (from Ghana-tech reference) ============ */
+:root{
+  --navy:#0B1424; --navy2:#111D33; --panel:#16233D;
+  --cyan:#6FE3F2; --cyan2:#38B6D6;
+  --red:#CE1126; --gold:#FCD116; --green:#006B3F;
+  --txt:#EAF2FB; --mut:#8CA0BC; --line:rgba(111,227,242,.16);
+  --glow:0 0 24px rgba(111,227,242,.35);
+}
+html[data-theme="light"]{
+  --navy:#F2F5FA; --navy2:#FFFFFF; --panel:#FFFFFF;
+  --cyan:#0E7C9C; --cyan2:#0A5F7A;
+  --txt:#0B1424; --mut:#5A6B84; --line:rgba(14,124,156,.18);
+  --glow:0 8px 30px rgba(14,124,156,.18);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--navy);color:var(--txt);overflow-x:hidden}
+h1,h2,h3,.brand{font-family:'Space Grotesk',sans-serif}
+
+/* binary pattern backdrop */
+body::before{content:'';position:fixed;inset:0;z-index:-2;background:var(--navy);}
+body::after{content:'';position:fixed;inset:0;z-index:-1;opacity:.05;pointer-events:none;
+  background-image:repeating-linear-gradient(0deg,transparent 0 18px,var(--cyan) 18px 19px),repeating-linear-gradient(90deg,transparent 0 18px,var(--cyan) 18px 19px);
+  mask-image:radial-gradient(ellipse at 50% 20%,#000 0%,transparent 70%)}
+
+/* flag stripe */
+.flag{height:6px;background:linear-gradient(90deg,var(--red) 0 33%,var(--gold) 33% 66%,var(--green) 66% 100%);position:relative}
+.flag::after{content:'★';position:absolute;left:50%;top:-7px;transform:translateX(-50%);font-size:10px;color:#0B1424}
+
+/* ============ NAV ============ */
+nav{position:fixed;top:6px;left:0;right:0;z-index:50;display:flex;justify-content:space-between;align-items:center;
+  padding:14px 5vw;background:color-mix(in srgb,var(--navy) 82%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.brand{font-size:21px;font-weight:700;letter-spacing:.5px;display:flex;align-items:center;gap:10px;color:var(--txt);text-decoration:none}
+.brand .dot{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#06131F;font-size:17px;box-shadow:var(--glow)}
+.brand b{color:var(--cyan)}
+.navr{display:flex;gap:10px;align-items:center}
+.tbtn{width:42px;height:42px;border-radius:99px;border:1px solid var(--line);background:var(--panel);color:var(--txt);cursor:pointer;font-size:17px}
+.appbtn{padding:11px 20px;border-radius:99px;border:none;cursor:pointer;font:700 14px 'Plus Jakarta Sans';
+  background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#06131F;box-shadow:var(--glow);text-decoration:none}
+
+/* ============ HERO w/ slideshow ============ */
+.hero{position:relative;min-height:92vh;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden}
+.slides{position:absolute;inset:0;z-index:0}
+.slide{position:absolute;inset:0;opacity:0;transition:opacity 1.4s ease}
+.slide.on{opacity:1}
+.slide video,.slide img{width:100%;height:100%;object-fit:cover}
+.hero .veil{position:absolute;inset:0;z-index:1;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--navy) 78%,transparent) 0%,color-mix(in srgb,var(--navy) 45%,transparent) 45%,var(--navy) 100%)}
+.hero .inner{position:relative;z-index:2;max-width:860px;padding:120px 6vw 80px}
+.chip{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line);background:color-mix(in srgb,var(--panel) 75%,transparent);
+  backdrop-filter:blur(8px);border-radius:99px;padding:9px 18px;font-size:13px;font-weight:600;color:var(--cyan)}
+.chip .pulse{width:8px;height:8px;border-radius:99px;background:var(--gold);animation:pl 1.6s infinite}
+@keyframes pl{0%,100%{opacity:1}50%{opacity:.3}}
+h1{font-size:clamp(34px,6vw,64px);line-height:1.08;margin:22px 0 18px;font-weight:700}
+h1 .g{background:linear-gradient(90deg,var(--cyan),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{font-size:clamp(15px,2vw,19px);color:var(--mut);font-weight:500;max-width:640px;margin:0 auto 34px;line-height:1.6}
+.ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.cta{padding:17px 34px;border-radius:99px;border:none;cursor:pointer;font:700 16px 'Plus Jakarta Sans';text-decoration:none;transition:.2s}
+.cta.primary{background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#06131F;box-shadow:var(--glow)}
+.cta.primary:hover{transform:translateY(-2px)}
+.cta.ghosty{background:color-mix(in srgb,var(--panel) 70%,transparent);border:1px solid var(--line);color:var(--txt);backdrop-filter:blur(8px)}
+.stats{display:flex;gap:36px;justify-content:center;margin-top:48px;flex-wrap:wrap}
+.stat b{display:block;font-size:26px;color:var(--cyan);font-family:'Space Grotesk'}
+.stat span{font-size:12px;color:var(--mut);font-weight:600}
+
+/* ============ SERVICES ============ */
+section{padding:80px 6vw;max-width:1100px;margin:0 auto}
+.sh{text-align:center;margin-bottom:44px}
+.sh h2{font-size:clamp(26px,4vw,40px)}
+.sh p{color:var(--mut);font-weight:500;margin-top:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px}
+.svc{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:26px 18px;text-align:center;transition:.2s;cursor:default}
+.svc:hover{transform:translateY(-5px);border-color:var(--cyan);box-shadow:var(--glow)}
+.svc .ic{font-size:30px}
+.svc h3{font-size:15.5px;margin-top:12px}
+.svc p{font-size:12px;color:var(--mut);font-weight:500;margin-top:5px}
+
+/* ============ HOW ============ */
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:26px;position:relative}
+.step .n{position:absolute;top:-14px;left:22px;width:30px;height:30px;border-radius:99px;display:flex;align-items:center;justify-content:center;
+  font:700 14px 'Space Grotesk';background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#06131F;box-shadow:var(--glow)}
+.step h3{font-size:16px;margin:8px 0 8px}
+.step p{font-size:13px;color:var(--mut);font-weight:500;line-height:1.6}
+
+/* ============ SIGNUP ============ */
+#join .card{background:var(--panel);border:1px solid var(--line);border-radius:28px;padding:38px 30px;max-width:640px;margin:0 auto;box-shadow:var(--glow)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.frow{grid-template-columns:1fr}}
+label{display:block;font-size:12.5px;font-weight:700;margin:14px 0 6px;color:var(--mut)}
+input[type=text],input[type=email],input[type=tel],select{width:100%;padding:14px 16px;border-radius:14px;border:1.5px solid var(--line);
+  background:var(--navy2);color:var(--txt);font:600 14.5px 'Plus Jakarta Sans';outline:none}
+input:focus,select:focus{border-color:var(--cyan)}
+.svcpick{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.svcpick label{display:flex;align-items:center;gap:7px;margin:0;padding:10px 14px;border:1.5px solid var(--line);border-radius:99px;
+  background:var(--navy2);cursor:pointer;font-size:13px;color:var(--txt);font-weight:600;transition:.15s}
+.svcpick input{display:none}
+.svcpick label.on{background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#06131F;border-color:transparent}
+.submit{width:100%;margin-top:24px;padding:17px;border-radius:99px;border:none;cursor:pointer;
+  font:700 16px 'Plus Jakarta Sans';background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#06131F;box-shadow:var(--glow);transition:.2s}
+.submit:hover{transform:translateY(-2px)}
+.submit:disabled{opacity:.5}
+.msg{margin-top:14px;text-align:center;font-size:14px;font-weight:700;display:none}
+.msg.ok{display:block;color:var(--gold)}
+.msg.err{display:block;color:var(--red)}
+
+/* ============ FOOTER ============ */
+footer{border-top:1px solid var(--line);padding:36px 6vw;text-align:center;color:var(--mut);font-size:13px;font-weight:500}
+footer .brand{justify-content:center;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<div class="flag"></div>
+<nav>
+  <a class="brand" href="#top">🇬🇭 House<b>Help</b></a>
+  <div class="navr">
+    <button class="tbtn" id="themeBtn" onclick="toggleTheme()" title="Light / dark">🌙</button>
+    <a class="appbtn" href="https://househelp-omega.vercel.app/">Open the App →</a>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero" id="top">
+  <div class="slides" id="slides">
+    <div class="slide on"><video src="bg1.mp4" autoplay muted loop playsinline></video></div>
+    <div class="slide"><img src="still1.jpg" alt="Nurse caring for elder at home"></div>
+    <div class="slide"><video src="bg2.mp4" muted loop playsinline></video></div>
+    <div class="slide"><img src="still3.jpg" alt="Home chef cooking"></div>
+    <div class="slide"><img src="still2.jpg" alt="Care at home"></div>
+    <div class="slide"><img src="still4.jpg" alt="House help arriving"></div>
+  </div>
+  <div class="veil"></div>
+  <div class="inner">
+    <span class="chip"><span class="pulse"></span>Launching first in Accra, Ghana · NHIS accepted</span>
+    <h1>Trusted care & house help,<br><span class="g">one tap away.</span></h1>
+    <p class="sub">Verified nurses, elderly companions, cooks, cleaners and house help — tracked live to your door, like a ride-hailing app. Built for Ghana, growing across Africa.</p>
+    <div class="ctas">
+      <a class="cta primary" href="#join">Join the Waitlist</a>
+      <a class="cta ghosty" href="https://househelp-omega.vercel.app/">Try the App Demo</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>6</b><span>SERVICES</span></div>
+      <div class="stat"><b>100%</b><span>VERIFIED HELPERS</span></div>
+      <div class="stat"><b>GH₵</b><span>MOMO & NHIS READY</span></div>
+      <div class="stat"><b>24/7</b><span>ON DEMAND</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ SERVICES ============ -->
+<section id="services">
+  <div class="sh"><h2>Every kind of help your home needs</h2><p>Tap a service in the app and a verified helper is on the way</p></div>
+  <div class="grid">
+    <div class="svc"><div class="ic">🩺</div><h3>Nurses</h3><p>Home visits, wound care, checks</p></div>
+    <div class="svc"><div class="ic">🤝</div><h3>Elderly Care</h3><p>Daily support & companionship</p></div>
+    <div class="svc"><div class="ic">🍲</div><h3>Cooks</h3><p>Fresh home meals, local & continental</p></div>
+    <div class="svc"><div class="ic">🧹</div><h3>Cleaners</h3><p>Deep home & office cleaning</p></div>
+    <div class="svc"><div class="ic">🦽</div><h3>Care Aides</h3><p>Mobility, wheelchair & guide help</p></div>
+    <div class="svc"><div class="ic">🏠</div><h3>House Help</h3><p>Errands & housekeeping</p></div>
+  </div>
+</section>
+
+<!-- ============ HOW ============ -->
+<section>
+  <div class="sh"><h2>As easy as calling a ride</h2><p>Four steps from tap to help at your door</p></div>
+  <div class="how">
+    <div class="step"><span class="n">1</span><h3>📍 Set your location</h3><p>Home, office or anywhere in your city. Your helper sees exactly where to come.</p></div>
+    <div class="step"><span class="n">2</span><h3>🧑🏾‍⚕️ Pick your service</h3><p>Nurse, elderly care, cook, cleaner, care aide or house help — all licence-checked and background-verified.</p></div>
+    <div class="step"><span class="n">3</span><h3>🛰️ Track them live</h3><p>Watch your helper travel to you on the map with a live ETA, just like your ride.</p></div>
+    <div class="step"><span class="n">4</span><h3>💛 Pay your way</h3><p>MTN MoMo, Telecel Cash, card, cash — and NHIS for covered health services.</p></div>
+  </div>
+</section>
+
+<!-- ============ SIGNUP ============ -->
+<section id="join">
+  <div class="sh"><h2>Be first in line</h2><p>Join the waitlist — early members get free first bookings when we launch in your area</p></div>
+  <div class="card">
+    <div class="frow">
+      <div><label>Full name *</label><input type="text" id="wName" placeholder="Ama Mensah"></div>
+      <div><label>City</label>
+        <select id="wCity">
+          <option>Accra</option><option>Kumasi</option><option>Takoradi</option>
+          <option>Tamale</option><option>Cape Coast</option><option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="frow">
+      <div><label>Phone (MoMo number)</label><input type="tel" id="wPhone" placeholder="024 000 0000"></div>
+      <div><label>Email</label><input type="email" id="wEmail" placeholder="you@email.com"></div>
+    </div>
+    <label>Which services do you need? (tap all that apply)</label>
+    <div class="svcpick" id="wSvcs">
+      <label><input type="checkbox" value="nurse">🩺 Nurse</label>
+      <label><input type="checkbox" value="elderly_care">🤝 Elderly Care</label>
+      <label><input type="checkbox" value="cook">🍲 Cook</label>
+      <label><input type="checkbox" value="cleaner">🧹 Cleaner</label>
+      <label><input type="checkbox" value="care_aide">🦽 Care Aide</label>
+      <label><input type="checkbox" value="house_help">🏠 House Help</label>
+    </div>
+    <button class="submit" id="wBtn" onclick="joinWaitlist()">Join the Waitlist 🚀</button>
+    <p class="msg" id="wMsg"></p>
+  </div>
+</section>
+
+<footer>
+  <a class="brand" href="#top">🇬🇭 House<b>Help</b></a>
+  <p>Care & home services on demand · Starting in Accra, Ghana · Growing across Africa</p>
+  <p style="margin-top:6px">© 2026 HouseHelp · <a href="https://househelp-omega.vercel.app/" style="color:var(--cyan)">Open the App</a></p>
+</footer>
+<div class="flag"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* ============ theme ============ */
+const saved=localStorage.getItem('hh-theme');
+if(saved)document.documentElement.setAttribute('data-theme',saved);
+else if(matchMedia('(prefers-color-scheme: light)').matches)document.documentElement.setAttribute('data-theme','light');
+syncThemeBtn();
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
+  if(cur==='light')document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  localStorage.setItem('hh-theme',cur==='light'?'light':'dark');
+  syncThemeBtn();
+}
+function syncThemeBtn(){
+  document.getElementById('themeBtn').textContent=
+    document.documentElement.getAttribute('data-theme')==='light'?'🌙':'☀️';
+}
+
+/* ============ slideshow ============ */
+const slides=[...document.querySelectorAll('.slide')];
+let cur=0;
+setInterval(()=>{
+  slides[cur].classList.remove('on');
+  const v0=slides[cur].querySelector('video');if(v0)v0.pause();
+  cur=(cur+1)%slides.length;
+  slides[cur].classList.add('on');
+  const v=slides[cur].querySelector('video');if(v){v.currentTime=0;v.play().catch(()=>{});}
+},6000);
+
+/* ============ waitlist ============ */
+const sb=window.supabase.createClient('https://wgzlcftxkrohiwxwbgaw.supabase.co','sb_publishable_nV3n7aZ74z9YdZ4shmdiCg_DA0mrODn');
+document.querySelectorAll('#wSvcs label').forEach(l=>{
+  l.addEventListener('click',()=>setTimeout(()=>l.classList.toggle('on',l.querySelector('input').checked),0));
+});
+async function joinWaitlist(){
+  const name=document.getElementById('wName').value.trim();
+  const phone=document.getElementById('wPhone').value.trim();
+  const email=document.getElementById('wEmail').value.trim();
+  const city=document.getElementById('wCity').value;
+  const services=[...document.querySelectorAll('#wSvcs input:checked')].map(i=>i.value);
+  const msg=document.getElementById('wMsg');
+  msg.className='msg';
+  if(!name){msg.className='msg err';msg.textContent='Please enter your name.';return;}
+  if(!phone&&!email){msg.className='msg err';msg.textContent='Add a phone number or email so we can reach you.';return;}
+  const btn=document.getElementById('wBtn');btn.disabled=true;btn.textContent='Joining…';
+  const {error}=await sb.from('hh_waitlist').insert({full_name:name,phone:phone||null,email:email||null,city,services});
+  btn.disabled=false;btn.textContent='Join the Waitlist 🚀';
+  if(error){msg.className='msg err';msg.textContent='Something went wrong — please try again.';return;}
+  msg.className='msg ok';msg.textContent='Akwaaba! 🎉 You\'re on the list — we\'ll message you when we launch in '+city+'.';
+  confetti();
+}
+function confetti(){
+  const cols=['#CE1126','#FCD116','#006B3F','#6FE3F2'];
+  for(let i=0;i<80;i++){
+    const c=document.createElement('div');
+    c.style.cssText=`position:fixed;top:-16px;left:${Math.random()*100}vw;width:9px;height:13px;z-index:99;background:${cols[i%4]};border-radius:${Math.random()>.5?'99px':'2px'};animation:cf ${2+Math.random()*2}s ${Math.random()*.7}s linear forwards;pointer-events:none`;
+    document.body.appendChild(c);setTimeout(()=>c.remove(),5200);
+  }
+}
+const st=document.createElement('style');st.textContent='@keyframes cf{to{transform:translateY(105vh) rotate(720deg)}}';document.head.appendChild(st);
+</script>
+</body>
+</html>
