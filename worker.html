@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>HouseHelp for Providers — Go online & earn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0C1119;--panel:#141C2A;--panel2:#1B2536;--txt:#EAF1FB;--mut:#7E8CA3;--line:rgba(255,255,255,.08);
+  --green:#22C55E;--amber:#F5B301;--blue:#4A8BC2;--red:#EF4444}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--txt);height:100dvh;overflow:hidden}
+#map{position:fixed;inset:0}
+.mk{width:20px;height:20px;border-radius:99px;background:var(--green);border:3px solid #fff;box-shadow:0 0 0 4px rgba(34,197,94,.3)}
+.mk.cust{width:34px;height:34px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+
+/* top status bar */
+.top{position:fixed;top:0;left:0;right:0;z-index:20;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;
+  background:linear-gradient(180deg,rgba(12,17,25,.95),transparent)}
+.who{display:flex;align-items:center;gap:11px}
+.ava{width:44px;height:44px;border-radius:99px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid var(--line)}
+.who .n{font-size:14.5px;font-weight:800}
+.who .r{font-size:11.5px;color:var(--mut);font-weight:600}
+.earn{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 14px;text-align:right}
+.earn b{font-size:15px;color:var(--green);font-weight:800;display:block}
+.earn span{font-size:9.5px;color:var(--mut);font-weight:700;letter-spacing:.3px}
+
+/* bottom sheet */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:480px;margin:0 auto;background:var(--panel);
+  border-radius:26px 26px 0 0;box-shadow:0 -14px 44px rgba(0,0,0,.5);padding:20px 20px calc(22px + env(safe-area-inset-bottom))}
+.grab{width:44px;height:5px;border-radius:99px;background:#2A3648;margin:0 auto 16px}
+
+/* online toggle big */
+.gobtn{width:100%;padding:20px;border:none;border-radius:20px;cursor:pointer;font:800 18px 'Plus Jakarta Sans';transition:.2s}
+.gobtn.off{background:var(--green);color:#052e13}
+.gobtn.on{background:var(--panel2);color:var(--txt);border:1.5px solid var(--line)}
+.statusline{text-align:center;font-size:13px;font-weight:600;color:var(--mut);margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.dot{width:9px;height:9px;border-radius:99px;background:var(--mut)}
+.dot.live{background:var(--green);animation:p 1.5s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
+.waiting{display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px 0 14px}
+.radar{width:70px;height:70px;border-radius:99px;border:2px solid var(--green);position:relative;display:flex;align-items:center;justify-content:center;font-size:28px}
+.radar::after{content:'';position:absolute;inset:-6px;border-radius:99px;border:2px solid rgba(34,197,94,.4);animation:pulse 1.8s infinite}
+@keyframes pulse{from{transform:scale(.7);opacity:1}to{transform:scale(1.4);opacity:0}}
+
+/* incoming request */
+.req{position:fixed;inset:0;z-index:60;background:rgba(6,10,16,.7);backdrop-filter:blur(6px);display:none;align-items:flex-end}
+.req.show{display:flex}
+.reqcard{width:100%;max-width:480px;margin:0 auto;background:var(--panel);border-radius:26px 26px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));animation:slideup .3s ease both}
+@keyframes slideup{from{transform:translateY(100%)}to{transform:none}}
+.reqcard .hd{display:flex;align-items:center;gap:13px;margin-bottom:6px}
+.reqcard .svcic{width:52px;height:52px;border-radius:16px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:26px}
+.reqcard h2{font-size:19px;font-weight:800}
+.reqcard .meta{font-size:12.5px;color:var(--mut);font-weight:600}
+.reqrow{display:flex;justify-content:space-between;padding:12px 0;border-top:1px solid var(--line);font-size:14px}
+.reqrow b{font-weight:800}
+.timer{height:5px;background:var(--panel2);border-radius:99px;overflow:hidden;margin:12px 0}
+.timer i{display:block;height:100%;background:var(--amber);width:100%;transition:width 1s linear}
+.reqbtns{display:flex;gap:10px;margin-top:8px}
+.reqbtns button{flex:1;padding:16px;border:none;border-radius:16px;font:800 15px 'Plus Jakarta Sans';cursor:pointer}
+.decline{background:var(--panel2);color:var(--mut)}
+.accept{background:var(--green);color:#052e13}
+
+/* active job */
+.job{display:none}.job.on{display:block}
+.jobhd{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.jobhd .svcic{width:50px;height:50px;border-radius:15px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:24px}
+.jobhd h2{font-size:17px;font-weight:800}
+.jobhd .meta{font-size:12px;color:var(--mut);font-weight:600}
+.jobact{width:100%;padding:17px;border:none;border-radius:16px;font:800 16px 'Plus Jakarta Sans';cursor:pointer;background:var(--blue);color:#fff;margin-top:6px}
+.jobsub{width:100%;padding:13px;border:none;border-radius:16px;font:700 13px 'Plus Jakarta Sans';cursor:pointer;background:var(--panel2);color:var(--mut);margin-top:9px}
+
+/* registration overlay */
+.reg{position:fixed;inset:0;z-index:70;background:var(--bg);overflow-y:auto;display:none}
+.reg.show{display:block}
+.reg .inner{max-width:460px;margin:0 auto;padding:40px 22px}
+.reg h1{font-size:26px;font-weight:800}
+.reg p.sub{color:var(--mut);font-size:14px;font-weight:500;margin:8px 0 20px}
+.reg label{display:block;font-size:12.5px;font-weight:700;margin:16px 0 6px}
+.reg input,.reg select,.reg textarea{width:100%;padding:14px 16px;border-radius:14px;border:1.5px solid var(--line);background:var(--panel);color:var(--txt);font:600 15px 'Plus Jakarta Sans';outline:none;resize:none}
+.reg input:focus,.reg select:focus,.reg textarea:focus{border-color:var(--blue)}
+.tabs{display:flex;gap:8px;margin-bottom:6px}
+.tabs button{flex:1;padding:12px;border-radius:12px;border:none;background:var(--panel);color:var(--txt);font:700 13px 'Plus Jakarta Sans';cursor:pointer}
+.tabs button.on{background:var(--blue);color:#fff}
+.svcgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:4px}
+.svc{border:1.5px solid var(--line);border-radius:14px;padding:14px 6px;text-align:center;cursor:pointer;background:var(--panel)}
+.svc.sel{border-color:var(--blue);background:var(--panel2)}
+.svc .ic{font-size:24px}.svc .nm{font-size:11px;font-weight:700;margin-top:5px}
+.cta{width:100%;margin-top:22px;padding:16px;border:none;border-radius:99px;cursor:pointer;font:800 16px 'Plus Jakarta Sans';color:#fff;background:var(--blue)}
+.cta:disabled{opacity:.4}
+.ghost{width:100%;margin-top:10px;padding:13px;border-radius:99px;border:none;background:var(--panel);color:var(--mut);font:700 13px 'Plus Jakarta Sans';cursor:pointer}
+.toast{position:fixed;top:74px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:90;background:#fff;color:#0C1119;font-size:13px;font-weight:700;padding:11px 18px;border-radius:99px;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.flag{position:fixed;top:0;left:0;right:0;height:4px;z-index:80;background:linear-gradient(90deg,#CE1126 0 33%,#FCD116 33% 66%,#006B3F 66% 100%)}
+</style>
+</head>
+<body>
+<div class="flag"></div>
+<div id="map"></div>
+<div class="toast" id="toast"></div>
+
+<!-- top -->
+<div class="top" id="topBar" style="display:none">
+  <div class="who"><div class="ava" id="ava">🧑🏾‍⚕️</div><div><div class="n" id="whoName">—</div><div class="r" id="whoRole">—</div></div></div>
+  <div class="earn"><b id="earnAmt">GH₵ 0</b><span>TODAY</span></div>
+</div>
+
+<!-- main sheet -->
+<div class="sheet" id="sheet" style="display:none">
+  <div class="grab"></div>
+  <!-- idle (online/offline) -->
+  <div id="idle">
+    <div class="statusline"><span class="dot" id="statDot"></span><span id="statTxt">You're offline</span></div>
+    <div id="waitingBox" class="waiting" style="display:none">
+      <div class="radar">📡</div>
+      <div style="font-size:13px;font-weight:700;color:var(--mut)">Waiting for booking requests near you…</div>
+    </div>
+    <button class="gobtn off" id="goBtn" onclick="toggleOnline()">Go Online</button>
+  </div>
+  <!-- active job -->
+  <div class="job" id="jobBox">
+    <div class="jobhd"><div class="svcic" id="jSvc">🩺</div><div><h2 id="jTitle">Job</h2><div class="meta" id="jMeta"></div></div></div>
+    <button class="jobact" id="jAct" onclick="advanceJob()">On my way</button>
+    <button class="jobsub" onclick="cancelJob()">Cancel job</button>
+  </div>
+</div>
+
+<!-- incoming request -->
+<div class="req" id="reqModal">
+  <div class="reqcard">
+    <div class="hd"><div class="svcic" id="rSvc">🩺</div><div><h2 id="rTitle">New booking!</h2><div class="meta" id="rMeta">A family needs your help</div></div></div>
+    <div class="reqrow"><span>Service</span><b id="rService">—</b></div>
+    <div class="reqrow"><span>Location</span><b id="rLoc">—</b></div>
+    <div class="reqrow"><span>You'll earn</span><b id="rFare" style="color:var(--green)">—</b></div>
+    <div class="timer"><i id="rTimer"></i></div>
+    <div class="reqbtns"><button class="decline" onclick="declineReq()">Decline</button><button class="accept" onclick="acceptReq()">Accept</button></div>
+  </div>
+</div>
+
+<!-- registration / login -->
+<div class="reg show" id="reg">
+  <div class="inner">
+    <!-- login -->
+    <div id="rg1">
+      <h1>HouseHelp <span style="color:var(--blue)">for Providers</span></h1>
+      <p class="sub">Sign in to go online and start earning. We'll send a verification code — no password.<br><a href="index.html" style="color:var(--blue);text-decoration:none;font-weight:700">← Need help instead? Customer app</a></p>
+      <div class="tabs"><button id="tabEmail" class="on" onclick="setMode('email')">📧 Email</button><button id="tabPhone" onclick="setMode('phone')">📱 Phone</button></div>
+      <input id="email" type="email" inputmode="email" placeholder="you@email.com">
+      <input id="phone" type="tel" inputmode="tel" placeholder="024 000 0000" style="display:none">
+      <button class="cta" id="sendBtn" onclick="sendCode()">Send Code</button>
+    </div>
+    <!-- code -->
+    <div id="rg2" style="display:none">
+      <h1>Enter your code</h1>
+      <p class="sub" id="codeSub">Check your inbox</p>
+      <input id="code" inputmode="numeric" maxlength="10" placeholder="Enter code" style="letter-spacing:5px;text-align:center;font-size:20px">
+      <button class="cta" id="verifyBtn" onclick="verifyCode()">Verify & Continue</button>
+      <button class="ghost" onclick="rgShow('rg1')">Back</button>
+    </div>
+    <!-- profile -->
+    <div id="rg3" style="display:none">
+      <h1>Set up your profile</h1>
+      <p class="sub">This is what families see when they book you.</p>
+      <label>Full name *</label><input id="name" type="text" placeholder="Ama Serwaa">
+      <label>Service you provide *</label>
+      <div class="svcgrid" id="svcGrid"></div>
+      <label>City *</label>
+      <select id="city"><option>Accra</option><option>Kumasi</option><option>Takoradi</option><option>Tamale</option><option>Cape Coast</option></select>
+      <label>ID or licence number <span style="color:var(--mut);font-weight:500">(Ghana Card or professional licence)</span></label>
+      <input id="license" type="text" placeholder="GHA-123456789-0">
+      <label>Short bio</label><textarea id="bio" rows="2" placeholder="e.g. Registered nurse, 6 years in home care."></textarea>
+      <button class="cta" id="saveBtn" onclick="saveProfile()">Start Providing 🚀</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const sb=window.supabase.createClient('https://wgzlcftxkrohiwxwbgaw.supabase.co','sb_publishable_nV3n7aZ74z9YdZ4shmdiCg_DA0mrODn');
+const $=id=>document.getElementById(id);
+let session=null,me=null,mode='email',map,online=false,userMarker,custMarker,job=null,earnings=0,reqTimer=null,channel=null,pendingBooking=null;
+const FARES={nurse:120,cook:150,cleaner:90,elderly_care:100,care_aide:90,house_help:80};
+const SVCMETA={nurse:['🩺','Nurse'],cook:['🍲','Cook'],cleaner:['🧹','Cleaner'],elderly_care:['🤝','Elderly Care'],care_aide:['🦽','Care Aide'],house_help:['🏠','House Help']};
+const DARK=[{elementType:'geometry',stylers:[{color:'#0f1725'}]},{elementType:'labels.text.fill',stylers:[{color:'#5b6880'}]},{elementType:'labels.text.stroke',stylers:[{color:'#0C1119'}]},{featureType:'poi',stylers:[{visibility:'off'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#1b2536'}]},{featureType:'road.highway',elementType:'geometry',stylers:[{color:'#2a3a54'}]},{featureType:'water',stylers:[{color:'#0a1420'}]}];
+let loc={lat:5.6037,lng:-0.1870};
+
+/* ===== auth ===== */
+sb.auth.getSession().then(async ({data})=>{if(data.session){session=data.session;await afterAuth();}});
+function setMode(m){mode=m;$('tabEmail').classList.toggle('on',m==='email');$('tabPhone').classList.toggle('on',m==='phone');$('email').style.display=m==='email'?'':'none';$('phone').style.display=m==='phone'?'':'none';}
+function normPhone(p){let d=(p||'').replace(/\D/g,'');if(d.startsWith('233'))d=d.slice(3);if(d.startsWith('0'))d=d.slice(1);return {e164:'+233'+d,valid:d.length===9};}
+function rgShow(s){['rg1','rg2','rg3'].forEach(x=>$(x).style.display=x===s?'':'none');}
+async function sendCode(){
+  $('sendBtn').disabled=true;$('sendBtn').textContent='Sending…';let error,target;
+  if(mode==='email'){target=$('email').value.trim();if(!target.includes('@')){rst('sendBtn','Send Code');return alert('Enter a valid email');}({error}=await sb.auth.signInWithOtp({email:target,options:{shouldCreateUser:true}}));}
+  else{const ph=normPhone($('phone').value.trim());if(!ph.valid){rst('sendBtn','Send Code');return alert('Enter a valid Ghana number, e.g. 024 123 4567');}target=ph.e164;({error}=await sb.auth.signInWithOtp({phone:target,options:{shouldCreateUser:true}}));}
+  rst('sendBtn','Send Code');if(error)return alert(error.message);
+  $('codeSub').textContent='Code sent to '+target;rgShow('rg2');
+}
+async function verifyCode(){
+  const code=$('code').value.trim();if(code.length<6)return alert('Enter the code');
+  $('verifyBtn').disabled=true;$('verifyBtn').textContent='Verifying…';let res;
+  if(mode==='email')res=await sb.auth.verifyOtp({email:$('email').value.trim(),token:code,type:'email'});
+  else res=await sb.auth.verifyOtp({phone:normPhone($('phone').value.trim()).e164,token:code,type:'sms'});
+  rst('verifyBtn','Verify & Continue');if(res.error)return alert(res.error.message);
+  session=res.data.session;await afterAuth();
+}
+function rst(id,t){$(id).disabled=false;$(id).textContent=t;}
+
+async function afterAuth(){
+  // check if provider profile exists
+  const {data}=await sb.from('hh_providers').select('id,service,is_online,hh_profiles(full_name)').eq('id',session.user.id).maybeSingle();
+  if(data&&data.service){me={id:data.id,service:data.service,name:(data.hh_profiles&&data.hh_profiles.full_name)||'Provider'};enterApp();}
+  else rgShow('rg3'); // needs profile setup
+}
+
+/* ===== profile setup ===== */
+const SERVICES=[['nurse','🩺','Nurse'],['elderly_care','🤝','Elderly'],['cook','🍲','Cook'],['cleaner','🧹','Cleaner'],['care_aide','🦽','Care Aide'],['house_help','🏠','House Help']];
+let pickedSvc=null;
+$('svcGrid').innerHTML=SERVICES.map(s=>`<div class="svc" data-id="${s[0]}" onclick="pickSvc('${s[0]}')"><div class="ic">${s[1]}</div><div class="nm">${s[2]}</div></div>`).join('');
+function pickSvc(id){pickedSvc=id;document.querySelectorAll('.svc').forEach(e=>e.classList.toggle('sel',e.dataset.id===id));}
+async function saveProfile(){
+  const name=$('name').value.trim();
+  if(!name)return alert('Enter your name');
+  if(!pickedSvc)return alert('Pick your service');
+  $('saveBtn').disabled=true;$('saveBtn').textContent='Saving…';
+  const uid=session.user.id;
+  const {error:pe}=await sb.from('hh_profiles').upsert({id:uid,full_name:name,role:'provider'});
+  if(pe){rst('saveBtn','Start Providing 🚀');return alert(pe.message);}
+  const {error}=await sb.from('hh_providers').upsert({id:uid,service:pickedSvc,bio:$('bio').value.trim()||null,license_number:$('license').value.trim()||null,is_online:false});
+  rst('saveBtn','Start Providing 🚀');if(error)return alert(error.message);
+  me={id:uid,service:pickedSvc,name};enterApp();
+}
+
+/* ===== app ===== */
+function enterApp(){
+  $('reg').classList.remove('show');$('topBar').style.display='flex';$('sheet').style.display='block';
+  const sm=SVCMETA[me.service];
+  $('ava').textContent=sm[0];$('whoName').textContent=me.name;$('whoRole').textContent=sm[1]+' · Provider';
+  if(!map)initMap();else placeUser();
+}
+function initMap(){
+  map=new google.maps.Map($('map'),{center:loc,zoom:15,styles:DARK,disableDefaultUI:true,gestureHandling:'greedy'});
+  if(navigator.geolocation)navigator.geolocation.getCurrentPosition(p=>{loc={lat:p.coords.latitude,lng:p.coords.longitude};map.setCenter(loc);placeUser();},()=>placeUser());
+  else placeUser();
+}
+function ov(pos,html){const o=new google.maps.OverlayView();o.pos=pos;o.onAdd=function(){this.d=document.createElement('div');this.d.style.cssText='position:absolute;transform:translate(-50%,-50%)';this.d.innerHTML=html;this.getPanes().overlayMouseTarget.appendChild(this.d)};o.draw=function(){if(!this.d)return;const pr=this.getProjection();if(!pr)return;const p=pr.fromLatLngToDivPixel(new google.maps.LatLng(this.pos));this.d.style.left=p.x+'px';this.d.style.top=p.y+'px'};o.move=function(x){this.pos=x;this.draw()};o.rm=function(){this.setMap(null)};o.setMap(map);return o;}
+function placeUser(){if(userMarker)userMarker.move(loc);else userMarker=ov(loc,'<div class="mk"></div>');}
+
+async function toggleOnline(){
+  online=!online;
+  $('goBtn').textContent=online?'Go Offline':'Go Online';
+  $('goBtn').className='gobtn '+(online?'on':'off');
+  $('statDot').className='dot'+(online?' live':'');
+  $('statTxt').textContent=online?'Online — you can receive bookings':"You're offline";
+  $('waitingBox').style.display=online?'flex':'none';
+  try{await sb.from('hh_providers').update({is_online:online,lat:loc.lat,lng:loc.lng}).eq('id',me.id);}catch(e){}
+  if(online)subscribe();else unsubscribe();
+  toast(online?'You are online 🟢':'You are offline');
+}
+function subscribe(){
+  unsubscribe();
+  channel=sb.channel('bk-'+me.id)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'hh_bookings',filter:'provider_id=eq.'+me.id},p=>incoming(p.new))
+    .subscribe();
+  // also poll as a fallback every 8s for any requested job assigned to me
+  poll();
+}
+let pollT=null;
+function poll(){clearInterval(pollT);pollT=setInterval(async()=>{
+  if(job||!online)return;
+  const {data}=await sb.from('hh_bookings').select('*').eq('provider_id',me.id).eq('status','requested').order('created_at',{ascending:false}).limit(1);
+  if(data&&data[0])incoming(data[0]);
+},8000);}
+function unsubscribe(){if(channel){sb.removeChannel(channel);channel=null;}clearInterval(pollT);}
+
+function incoming(b){
+  if(job||pendingBooking)return;
+  pendingBooking=b;
+  const sm=SVCMETA[b.service]||['🛎️','Service'];
+  const fare=FARES[b.service]||100;
+  $('rSvc').textContent=sm[0];$('rService').textContent=sm[1];
+  $('rLoc').textContent=b.address||'Customer location';
+  $('rFare').textContent='GH₵ '+(b.nhis_used?'0 (NHIS)':fare);
+  $('reqModal').classList.add('show');
+  // 20s countdown
+  let t=20;$('rTimer').style.width='100%';
+  reqTimer=setInterval(()=>{t--;$('rTimer').style.width=(t/20*100)+'%';if(t<=0)declineReq();},1000);
+}
+async function acceptReq(){
+  clearInterval(reqTimer);$('reqModal').classList.remove('show');
+  job=pendingBooking;pendingBooking=null;
+  await sb.from('hh_bookings').update({status:'accepted'}).eq('id',job.id);
+  showJob('accepted');
+  // place customer marker + route
+  if(job.lat&&job.lng){const cp={lat:job.lat,lng:job.lng};const sm=SVCMETA[job.service];custMarker=ov(cp,`<div class="mk cust">${sm[0]}</div>`);const b=new google.maps.LatLngBounds();b.extend(loc);b.extend(cp);map.fitBounds(b,90);}
+  toast('Job accepted — head to the customer');
+}
+function declineReq(){clearInterval(reqTimer);$('reqModal').classList.remove('show');pendingBooking=null;}
+
+const FLOW={accepted:['On my way','en_route'],en_route:["I've arrived",'arrived'],arrived:['Start service','in_progress'],in_progress:['Complete & get paid','completed']};
+function showJob(status){
+  $('idle').style.display='none';$('jobBox').classList.add('on');
+  const sm=SVCMETA[job.service];
+  $('jSvc').textContent=sm[0];$('jTitle').textContent=sm[1]+' booking';
+  $('jMeta').textContent=(job.address||'Customer location')+' · GH₵ '+(job.nhis_used?'0 (NHIS)':(FARES[job.service]||100));
+  $('jAct').textContent=FLOW[status][0];
+  job._status=status;
+}
+async function advanceJob(){
+  const next=FLOW[job._status][1];
+  await sb.from('hh_bookings').update({status:next}).eq('id',job.id);
+  if(next==='completed'){
+    earnings+=job.nhis_used?0:(FARES[job.service]||100);
+    $('earnAmt').textContent='GH₵ '+earnings;
+    try{await sb.from('hh_providers').update({jobs_completed:(await getJobs())+1}).eq('id',me.id);}catch(e){}
+    endJob();toast('Paid! 🎉 Nice work');
+  }else{showJob(next);toast(next==='arrived'?'Marked as arrived':'Status updated');}
+}
+async function getJobs(){const {data}=await sb.from('hh_providers').select('jobs_completed').eq('id',me.id).single();return (data&&data.jobs_completed)||0;}
+async function cancelJob(){if(job){await sb.from('hh_bookings').update({status:'cancelled'}).eq('id',job.id);endJob();toast('Job cancelled');}}
+function endJob(){if(custMarker){custMarker.rm();custMarker=null;}job=null;$('jobBox').classList.remove('on');$('idle').style.display='block';map.panTo(loc);map.setZoom(15);}
+
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200);}
+window.initMap=initMap;
+</script>
+<script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC7teOyzCVKPJ3y2I6Ei0f8KljggOWf4ws&loading=async&callback=initMap"></script>
+</body>
+</html>
