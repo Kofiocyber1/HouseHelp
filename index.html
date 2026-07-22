@@ -337,16 +337,27 @@ function boot(){
     providers.push({i:idx++,svc:s.id,name:n[0],role:n[1],face:n[2],pos,m:null,eta:0});
   }));
   loadRealProviders();
+  setInterval(loadRealProviders,15000); /* refresh online workers every 15s */
 }
 async function loadRealProviders(){
+  if(trip)return; /* don't reshuffle mid-trip */
   try{
     const {data,error}=await sb.from('hh_providers')
       .select('id,service,rating,jobs_completed,license_verified,lat,lng,is_online,hh_profiles(full_name)');
     if(error||!data)return;
-    let idx=providers.length;
-    data.filter(r=>r.is_online).forEach(r=>{
-      const svcId=DB2SVC[r.service];if(!svcId)return;
+    const online=data.filter(r=>r.is_online&&DB2SVC[r.service]);
+    const liveIds=new Set(online.map(r=>r.id));
+    /* remove providers who went offline */
+    providers=providers.filter(p=>{
+      if(p.real&&!liveIds.has(p.dbId)){if(p.m)p.m.setMap(null);return false;}
+      return true;
+    });
+    let idx=providers.length?Math.max(...providers.map(p=>p.i))+1:0;
+    online.forEach(r=>{
+      const svcId=DB2SVC[r.service];
+      const existing=providers.find(p=>p.real&&p.dbId===r.id);
       const pos={lat:r.lat??user.lat+R(-.01,.01),lng:r.lng??user.lng+R(-.01,.01)};
+      if(existing){existing.pos=pos;if(existing.m)existing.m.move(pos);return;} /* update position */
       const m=ovMarker(pos,`<div class="mk">${MICON[svcId]}</div>`);
       providers.push({i:idx++,svc:svcId,real:true,dbId:r.id,
         name:(r.hh_profiles&&r.hh_profiles.full_name)||'Provider',

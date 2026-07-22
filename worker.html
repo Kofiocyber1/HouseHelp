@@ -93,12 +93,35 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .toast{position:fixed;top:74px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:90;background:#fff;color:#0C1119;font-size:13px;font-weight:700;padding:11px 18px;border-radius:99px;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .flag{position:fixed;top:0;left:0;right:0;height:4px;z-index:80;background:linear-gradient(90deg,#CE1126 0 33%,#FCD116 33% 66%,#006B3F 66% 100%)}
+/* map controls (same as customer app) */
+.mapctl{position:fixed;right:12px;bottom:220px;z-index:14;display:flex;flex-direction:column;gap:9px;align-items:center;transition:bottom .3s}
+.mbtn{width:44px;height:44px;border:none;border-radius:99px;background:rgba(20,28,42,.9);backdrop-filter:blur(6px);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4);font:800 13px 'Plus Jakarta Sans'}
+.mbtn:active{transform:scale(.92)}.mbtn svg{width:22px;height:22px}
+.zoompill{display:flex;flex-direction:column;border-radius:24px;background:rgba(20,28,42,.9);backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.4);overflow:hidden}
+.zoompill button{width:44px;height:44px;border:none;background:transparent;color:#fff;font:600 24px 'Plus Jakarta Sans';cursor:pointer;line-height:1}
+.zoompill button:first-child{border-bottom:1px solid rgba(255,255,255,.15)}
+#compassNeedle{transition:transform .3s ease}
 </style>
 </head>
 <body>
 <div class="flag"></div>
 <div id="map"></div>
 <div class="toast" id="toast"></div>
+
+<!-- map controls -->
+<div class="mapctl" id="mapCtl" style="display:none">
+  <button class="mbtn" onclick="ctlCompass()" title="Reset north">
+    <svg id="compassNeedle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/><path d="M12 3.5 15 12H9L12 3.5Z" fill="#E5484D"/><path d="M12 20.5 9 12h6l-3 8.5Z" fill="#fff"/></svg>
+  </button>
+  <button class="mbtn" id="btn3d" onclick="ctl3D()" title="3D view">3D</button>
+  <button class="mbtn" onclick="ctlLocate()" title="My location">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.4" fill="#fff" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+  </button>
+  <div class="zoompill">
+    <button onclick="ctlZoom(1)" title="Zoom in">+</button>
+    <button onclick="ctlZoom(-1)" title="Zoom out">−</button>
+  </div>
+</div>
 
 <!-- top -->
 <div class="top" id="topBar" style="display:none">
@@ -234,16 +257,22 @@ async function saveProfile(){
 
 /* ===== app ===== */
 function enterApp(){
-  $('reg').classList.remove('show');$('topBar').style.display='flex';$('sheet').style.display='block';
+  $('reg').classList.remove('show');$('topBar').style.display='flex';$('sheet').style.display='block';$('mapCtl').style.display='flex';
   const sm=SVCMETA[me.service];
   $('ava').textContent=sm[0];$('whoName').textContent=me.name;$('whoRole').textContent=sm[1]+' · Provider';
   if(!map)initMap();else placeUser();
 }
 function initMap(){
-  map=new google.maps.Map($('map'),{center:loc,zoom:15,styles:DARK,disableDefaultUI:true,gestureHandling:'greedy'});
+  map=new google.maps.Map($('map'),{center:loc,zoom:15,styles:DARK,disableDefaultUI:true,gestureHandling:'greedy',mapId:'DEMO_MAP_ID_DARK',heading:0,tilt:0});
+  map.addListener('heading_changed',()=>{const n=$('compassNeedle');if(n)n.style.transform=`rotate(${-(map.getHeading()||0)}deg)`;});
   if(navigator.geolocation)navigator.geolocation.getCurrentPosition(p=>{loc={lat:p.coords.latitude,lng:p.coords.longitude};map.setCenter(loc);placeUser();},()=>placeUser());
   else placeUser();
 }
+/* map controls */
+function ctlZoom(d){if(map)map.setZoom(map.getZoom()+d);}
+function ctlCompass(){if(map){try{map.setHeading(0);map.setTilt(0);$('btn3d').textContent='3D';}catch(e){}}}
+function ctl3D(){if(!map)return;try{if((map.getTilt()||0)>0){map.setTilt(0);map.setHeading(0);$('btn3d').textContent='3D';}else{map.setTilt(67.5);map.setHeading(30);$('btn3d').textContent='2D';}}catch(e){toast('3D not available here');}}
+function ctlLocate(){if(!navigator.geolocation)return toast('Location off');toast('Finding you…');navigator.geolocation.getCurrentPosition(p=>{loc={lat:p.coords.latitude,lng:p.coords.longitude};placeUser();if(map){map.panTo(loc);map.setZoom(16);}if(online)sb.from('hh_providers').update({lat:loc.lat,lng:loc.lng}).eq('id',me.id);},()=>toast('Could not locate'),{enableHighAccuracy:true,timeout:8000});}
 function ov(pos,html){const o=new google.maps.OverlayView();o.pos=pos;o.onAdd=function(){this.d=document.createElement('div');this.d.style.cssText='position:absolute;transform:translate(-50%,-50%)';this.d.innerHTML=html;this.getPanes().overlayMouseTarget.appendChild(this.d)};o.draw=function(){if(!this.d)return;const pr=this.getProjection();if(!pr)return;const p=pr.fromLatLngToDivPixel(new google.maps.LatLng(this.pos));this.d.style.left=p.x+'px';this.d.style.top=p.y+'px'};o.move=function(x){this.pos=x;this.draw()};o.rm=function(){this.setMap(null)};o.setMap(map);return o;}
 function placeUser(){if(userMarker)userMarker.move(loc);else userMarker=ov(loc,'<div class="mk"></div>');}
 
