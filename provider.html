@@ -73,7 +73,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);background:#fff
     <!-- STEP 1: contact -->
     <div class="step on" id="s1">
       <h2>Create your provider account</h2>
-      <p class="sub">We'll send a 6-digit code to verify you — no password.</p>
+      <p class="sub">We'll send a verification code — no password.</p>
       <div class="tabs">
         <button id="tabEmail" class="on" onclick="setMode('email')">📧 Email</button>
         <button id="tabPhone" onclick="setMode('phone')">📱 Phone</button>
@@ -87,7 +87,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);background:#fff
     <div class="step" id="s2">
       <h2>Enter your code</h2>
       <p class="sub" id="codeSub">Check your inbox</p>
-      <input id="code" inputmode="numeric" maxlength="6" placeholder="6-digit code" style="letter-spacing:5px;text-align:center;font-size:20px">
+      <input id="code" inputmode="numeric" maxlength="10" placeholder="Enter code" style="letter-spacing:5px;text-align:center;font-size:20px">
       <button class="cta" id="verifyBtn" onclick="verifyCode()">Verify & Continue</button>
       <button class="ghost" onclick="show('s1')">Back</button>
     </div>
@@ -144,21 +144,21 @@ function pickSvc(id){svc=id;document.querySelectorAll('.svc').forEach(e=>e.class
 
 function show(s){document.querySelectorAll('.step').forEach(e=>e.classList.remove('on'));$(s).classList.add('on');window.scrollTo({top:0,behavior:'smooth'});}
 function setMode(m){mode=m;$('tabEmail').classList.toggle('on',m==='email');$('tabPhone').classList.toggle('on',m==='phone');$('email').style.display=m==='email'?'':'none';$('phone').style.display=m==='phone'?'':'none';}
-function normPhone(p){p=p.replace(/[\s-]/g,'');if(p.startsWith('0'))p='+233'+p.slice(1);if(!p.startsWith('+'))p='+'+p;return p;}
+function normPhone(p){let d=(p||'').replace(/\D/g,'');if(d.startsWith('233'))d=d.slice(3);if(d.startsWith('0'))d=d.slice(1);return {e164:'+233'+d,valid:d.length===9};}
 
 async function sendCode(){
   $('sendBtn').disabled=true;$('sendBtn').textContent='Sending…';let error,target;
   if(mode==='email'){target=$('email').value.trim();if(!target.includes('@')){reset('sendBtn','Send Code');return alert('Enter a valid email');}({error}=await sb.auth.signInWithOtp({email:target,options:{shouldCreateUser:true}}));}
-  else{target=normPhone($('phone').value.trim());if(target.length<12){reset('sendBtn','Send Code');return alert('Enter a valid phone');}({error}=await sb.auth.signInWithOtp({phone:target,options:{shouldCreateUser:true}}));}
+  else{const ph=normPhone($('phone').value.trim());if(!ph.valid){reset('sendBtn','Send Code');return alert('Enter a valid Ghana number, e.g. 024 123 4567');}target=ph.e164;({error}=await sb.auth.signInWithOtp({phone:target,options:{shouldCreateUser:true}}));}
   reset('sendBtn','Send Code');
   if(error)return alert(error.message);
   $('codeSub').textContent='Code sent to '+target;show('s2');
 }
 async function verifyCode(){
-  const code=$('code').value.trim();if(code.length<6)return alert('Enter the 6-digit code');
+  const code=$('code').value.trim();if(code.length<6)return alert('Enter the code from your email/SMS');
   $('verifyBtn').disabled=true;$('verifyBtn').textContent='Verifying…';let res;
   if(mode==='email')res=await sb.auth.verifyOtp({email:$('email').value.trim(),token:code,type:'email'});
-  else res=await sb.auth.verifyOtp({phone:normPhone($('phone').value.trim()),token:code,type:'sms'});
+  else res=await sb.auth.verifyOtp({phone:normPhone($('phone').value.trim()).e164,token:code,type:'sms'});
   reset('verifyBtn','Verify & Continue');
   if(res.error)return alert(res.error.message);
   session=res.data.session;show('s3');

@@ -205,7 +205,7 @@ h2{font-size:17px;font-weight:800}
     <!-- AUTH STEP 1: email or phone -->
     <div class="step" id="pA1">
       <h2>Sign in to book</h2>
-      <p class="sub">We'll send you a 6-digit code — no password needed.</p>
+      <p class="sub">We'll send you a verification code — no password needed.</p>
       <div class="row2" style="margin-bottom:4px">
         <button class="ghost" id="tabEmail" style="margin-top:0;background:var(--ink);color:#fff" onclick="setAuthMode('email')">📧 Email</button>
         <button class="ghost" id="tabPhone" style="margin-top:0" onclick="setAuthMode('phone')">📱 Phone</button>
@@ -220,7 +220,7 @@ h2{font-size:17px;font-weight:800}
     <div class="step" id="pA2">
       <h2>Enter the code</h2>
       <p class="sub" id="codeSub">Check your email inbox</p>
-      <input class="field" id="authCode" inputmode="numeric" maxlength="6" placeholder="6-digit code" style="letter-spacing:4px;text-align:center">
+      <input class="field" id="authCode" inputmode="numeric" maxlength="10" placeholder="Enter code" style="letter-spacing:4px;text-align:center">
       <button class="cta" onclick="verifyCode()" id="verifyBtn">Verify & Continue</button>
       <button class="ghost" onclick="go('pA1')">Back</button>
     </div>
@@ -507,10 +507,10 @@ function setAuthMode(m){
   $('authPhone').style.display=m==='phone'?'':'none';
 }
 function normPhone(p){
-  p=p.replace(/[\s-]/g,'');
-  if(p.startsWith('0'))p='+233'+p.slice(1);      /* 024… → +23324… */
-  if(!p.startsWith('+'))p='+'+p;
-  return p;
+  let d=(p||'').replace(/\D/g,'');           /* digits only */
+  if(d.startsWith('233'))d=d.slice(3);       /* drop country code if typed */
+  if(d.startsWith('0'))d=d.slice(1);         /* drop trunk 0: 024… → 24… */
+  return {e164:'+233'+d, valid:d.length===9};/* Ghana mobile = 9 national digits */
 }
 async function sendCode(){
   $('sendBtn').disabled=true;$('sendBtn').textContent='Sending…';
@@ -520,8 +520,9 @@ async function sendCode(){
     if(!target||!target.includes('@')){$('sendBtn').disabled=false;$('sendBtn').textContent='Send Code';return toast('Enter a valid email');}
     ({error}=await sb.auth.signInWithOtp({email:target,options:{shouldCreateUser:true}}));
   }else{
-    target=normPhone($('authPhone').value.trim());
-    if(target.length<12){$('sendBtn').disabled=false;$('sendBtn').textContent='Send Code';return toast('Enter a valid phone number');}
+    const ph=normPhone($('authPhone').value.trim());
+    if(!ph.valid){$('sendBtn').disabled=false;$('sendBtn').textContent='Send Code';return toast('Enter a valid Ghana number, e.g. 024 123 4567');}
+    target=ph.e164;
     ({error}=await sb.auth.signInWithOtp({phone:target,options:{shouldCreateUser:true}}));
   }
   $('sendBtn').disabled=false;$('sendBtn').textContent='Send Code';
@@ -531,7 +532,7 @@ async function sendCode(){
 }
 async function verifyCode(){
   const code=$('authCode').value.trim();
-  if(code.length<6)return toast('Enter the 6-digit code');
+  if(code.length<6)return toast('Enter the code from your email/SMS');
   $('verifyBtn').disabled=true;$('verifyBtn').textContent='Verifying…';
   let res;
   if(authMode==='email'){
