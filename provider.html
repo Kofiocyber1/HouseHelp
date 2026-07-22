@@ -102,8 +102,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);background:#fff
       <div class="svcgrid" id="svcGrid"></div>
       <label>City *</label>
       <select id="city"><option>Accra</option><option>Kumasi</option><option>Takoradi</option><option>Tamale</option><option>Cape Coast</option></select>
-      <label>Licence / certificate number <span style="color:var(--mut);font-weight:500">(nurses & aides — optional otherwise)</span></label>
-      <input id="license" type="text" placeholder="e.g. NMC-GH-12345">
+      <label>ID or licence number <span style="color:var(--mut);font-weight:500">(Ghana Card, or professional licence for nurses/aides)</span></label>
+      <input id="license" type="text" placeholder="e.g. GHA-123456789-0 or NMC-GH-12345">
       <label>Short bio</label>
       <textarea id="bio" rows="3" placeholder="e.g. Registered nurse, 6 years experience in home & wound care."></textarea>
       <div class="toggle-row">
@@ -170,8 +170,9 @@ async function saveProvider(){
   if(!svc){msg.className='msg err';msg.textContent='Please pick the service you provide.';return;}
   $('saveBtn').disabled=true;$('saveBtn').textContent='Saving…';
   const uid=session.user.id;
-  // update profile: name + role
-  await sb.from('hh_profiles').update({full_name:name,role:'provider'}).eq('id',uid);
+  // ensure a profile row exists (upsert covers users created before the trigger)
+  const {error:pErr}=await sb.from('hh_profiles').upsert({id:uid,full_name:name,role:'provider'});
+  if(pErr){$('saveBtn').disabled=false;$('saveBtn').textContent='Create My Provider Profile 🚀';$('msg').className='msg err';$('msg').textContent=pErr.message;return;}
   // upsert provider record
   const {error}=await sb.from('hh_providers').upsert({
     id:uid,service:svc,bio:bio||null,license_number:license||null,
