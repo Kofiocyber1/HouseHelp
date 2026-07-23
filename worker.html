@@ -104,10 +104,10 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 /* mobile-only phone frame on wider screens */
 @media(min-width:520px){
   html,body{background:#0F1319}
-  .top{left:50%;right:auto;transform:translateX(-50%);width:440px;max-width:440px}
-  #map{left:50%;right:auto;transform:translateX(-50%);width:440px}
+  .top{left:calc(50% - 220px);right:auto;width:440px;max-width:440px}
+  #map{left:calc(50% - 220px);right:auto;width:440px}
   .sheet,.bnav,.reqcard{max-width:440px}
-  .reg{left:50%;right:auto;transform:translateX(-50%);width:440px;max-width:440px}
+  .reg{left:calc(50% - 220px);right:auto;width:440px;max-width:440px}
   .mapctl{right:calc(50vw - 220px + 10px)}
 }
 </style>
