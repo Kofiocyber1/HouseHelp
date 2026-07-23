@@ -90,6 +90,17 @@ section{padding:80px 6vw;max-width:1100px;margin:0 auto}
 .svc:hover{transform:translateY(-5px);border-color:var(--cyan);box-shadow:var(--glow)}
 .svc .ic{font-size:30px}
 .svc h3{font-size:15.5px;margin-top:12px}
+/* two apps */
+.apps-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:640px){.apps-grid{grid-template-columns:1fr}}
+.appcard{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:30px 24px;transition:.2s}
+.appcard:hover{transform:translateY(-5px);border-color:var(--cyan);box-shadow:var(--glow)}
+.appcard.helper{border-color:rgba(252,209,22,.4)}
+.appcard .appic{width:56px;height:56px;border-radius:16px;background:var(--navy2);display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:14px}
+.appcard h3{font-size:21px;margin-bottom:8px}
+.appcard p{font-size:14px;color:var(--mut);font-weight:500;line-height:1.6;margin-bottom:18px}
+.appgo{display:inline-block;padding:14px 22px;border-radius:99px;background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#06131F;font-weight:800;font-size:14px;text-decoration:none}
+.appcard.helper .appgo{background:linear-gradient(135deg,var(--gold),#E0A800);color:#3A2E00}
 .svc p{font-size:12px;color:var(--mut);font-weight:500;margin-top:5px}
 
 /* ============ HOW ============ */
@@ -153,8 +164,8 @@ footer .brand{justify-content:center;margin-bottom:10px}
     <h1>Trusted care & house help,<br><span class="g">one tap away.</span></h1>
     <p class="sub">Verified nurses, elderly companions, cooks, cleaners and house help — tracked live to your door, like a ride-hailing app. Built for Ghana, growing across Africa.</p>
     <div class="ctas">
-      <a class="cta primary" href="#join">Join the Waitlist</a>
-      <a class="cta ghosty" href="https://househelp-omega.vercel.app/">Try the App Demo</a>
+      <a class="cta primary" href="#apps">Open an App</a>
+      <a class="cta ghosty" href="#join">Join the Waitlist</a>
     </div>
     <div class="stats">
       <div class="stat"><b>6</b><span>SERVICES</span></div>
@@ -164,6 +175,25 @@ footer .brand{justify-content:center;margin-bottom:10px}
     </div>
   </div>
 </header>
+
+<!-- ============ TWO APPS ============ -->
+<section id="apps">
+  <div class="sh"><h2>Two apps, one platform</h2><p>Like Uber has a rider app and a driver app — HouseHelp has one for families and one for helpers</p></div>
+  <div class="apps-grid">
+    <div class="appcard">
+      <div class="appic">📱</div>
+      <h3>Customer App</h3>
+      <p>For families who need help. Pick a service, see verified helpers near you on the map, and book one to your door — nurses, cooks, cleaners, elderly care and more.</p>
+      <a class="appgo" href="https://househelp-omega.vercel.app/">Open Customer App →</a>
+    </div>
+    <div class="appcard helper">
+      <div class="appic">💼</div>
+      <h3>Helper App</h3>
+      <p>For nurses, cooks, cleaners & house help. Sign in, go online, and wait to be called on. Accept booking requests near you and track your earnings — work on your own schedule.</p>
+      <a class="appgo" href="https://househelp-omega.vercel.app/worker.html">Open Helper App →</a>
+    </div>
+  </div>
+</section>
 
 <!-- ============ SERVICES ============ -->
 <section id="services">

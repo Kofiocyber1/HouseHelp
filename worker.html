@@ -7,11 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--green:#2E9E5B;--greenD:#217A45;--greenL:#E9F6EE;--ink:#16241C;--bg:#F4F6F4;--card:#FFFFFF;--mut:#8B968E;--line:rgba(22,36,28,.08);--amber:#F5B301;--red:#E5484D;--shadow:0 10px 30px rgba(22,36,28,.12)}
+:root{--green:#4A8BC2;--greenD:#3570a8;--greenL:#E8F0F7;--ink:#1F2A44;--bg:#F4F2ED;--card:#FFFFFF;--mut:#8A8F9C;--line:rgba(31,42,68,.08);--amber:#F5B301;--red:#E5484D;--shadow:0 10px 30px rgba(31,42,68,.12)}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);height:100dvh;overflow:hidden}
 #map{position:fixed;top:0;left:0;right:0;bottom:0}
-.mk{width:20px;height:20px;border-radius:99px;background:var(--green);border:3px solid #fff;box-shadow:0 0 0 4px rgba(46,158,91,.25)}
+.mk{width:20px;height:20px;border-radius:99px;background:var(--green);border:3px solid #fff;box-shadow:0 0 0 4px rgba(74,139,194,.25)}
 .mk.cust{width:34px;height:34px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 
 /* top bar */
@@ -30,12 +30,12 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 #compassNeedle{transition:transform .3s}
 
 /* bottom sheet */
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:480px;margin:0 auto;background:var(--card);border-radius:24px 24px 0 0;box-shadow:0 -12px 40px rgba(22,36,28,.16);padding:0 0 60px;display:none}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:480px;margin:0 auto;background:var(--card);border-radius:24px 24px 0 0;box-shadow:0 -12px 40px rgba(31,42,68,.16);padding:0 0 60px;display:none}
 .handle{padding:10px 0 4px}.grab{width:44px;height:5px;border-radius:99px;background:#DDE3DD;margin:0 auto}
 .pad{padding:8px 18px 14px}
 
 /* go online */
-.gobtn{width:100%;padding:20px;border:none;border-radius:18px;cursor:pointer;font:800 18px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 8px 22px rgba(46,158,91,.35)}
+.gobtn{width:100%;padding:20px;border:none;border-radius:18px;cursor:pointer;font:800 18px 'Plus Jakarta Sans';display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 8px 22px rgba(74,139,194,.35)}
 .gobtn.off{background:var(--green);color:#fff}
 .gobtn.on{background:#fff;color:var(--ink);border:1.5px solid var(--line);box-shadow:none}
 .gobtn .d{width:11px;height:11px;border-radius:99px;background:#fff}
@@ -59,7 +59,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .irow .chev{color:var(--mut);font-size:18px}
 
 /* incoming request */
-.req{position:fixed;inset:0;z-index:60;background:rgba(22,36,28,.55);backdrop-filter:blur(4px);display:none;align-items:flex-end}
+.req{position:fixed;inset:0;z-index:60;background:rgba(31,42,68,.55);backdrop-filter:blur(4px);display:none;align-items:flex-end}
 .req.show{display:flex}
 .reqcard{width:100%;max-width:480px;margin:0 auto;background:var(--card);border-radius:24px 24px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));animation:slideup .3s ease both}
 @keyframes slideup{from{transform:translateY(100%)}to{transform:none}}
@@ -101,6 +101,15 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .bnav a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--mut);text-decoration:none}
 .bnav a.on{color:var(--green)}.bnav a .bi{font-size:19px}
 .flag{position:fixed;top:0;left:0;right:0;height:4px;z-index:80;background:linear-gradient(90deg,#CE1126 0 33%,#FCD116 33% 66%,#006B3F 66% 100%)}
+/* mobile-only phone frame on wider screens */
+@media(min-width:520px){
+  html,body{background:#0F1319}
+  .top{left:50%;right:auto;transform:translateX(-50%);width:440px;max-width:440px}
+  #map{left:50%;right:auto;transform:translateX(-50%);width:440px}
+  .sheet,.bnav,.reqcard{max-width:440px}
+  .reg{left:50%;right:auto;transform:translateX(-50%);width:440px;max-width:440px}
+  .mapctl{right:calc(50vw - 220px + 10px)}
+}
 </style>
 </head>
 <body>
@@ -117,9 +126,9 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 
 <!-- map controls -->
 <div class="mapctl" id="mapCtl">
-  <button class="mbtn" onclick="ctlCompass()"><svg id="compassNeedle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="rgba(22,36,28,.25)" stroke-width="1.5"/><path d="M12 3.5 15 12H9L12 3.5Z" fill="#E5484D"/><path d="M12 20.5 9 12h6l-3 8.5Z" fill="#16241C"/></svg></button>
+  <button class="mbtn" onclick="ctlCompass()"><svg id="compassNeedle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="rgba(31,42,68,.25)" stroke-width="1.5"/><path d="M12 3.5 15 12H9L12 3.5Z" fill="#E5484D"/><path d="M12 20.5 9 12h6l-3 8.5Z" fill="#1F2A44"/></svg></button>
   <button class="mbtn" id="btn3d" onclick="ctl3D()">3D</button>
-  <button class="mbtn" onclick="ctlLocate()"><svg viewBox="0 0 24 24" fill="none" stroke="#16241C" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.4" fill="#16241C" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+  <button class="mbtn" onclick="ctlLocate()"><svg viewBox="0 0 24 24" fill="none" stroke="#1F2A44" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.4" fill="#1F2A44" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
   <div class="zoompill"><button onclick="ctlZoom(1)">+</button><button onclick="ctlZoom(-1)">−</button></div>
 </div>
 

@@ -7,14 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--green:#2E9E5B;--greenD:#217A45;--greenL:#E9F6EE;--ink:#16241C;--bg:#F4F6F4;--card:#FFFFFF;--mut:#8B968E;--line:rgba(22,36,28,.08);--amber:#F5B301;--shadow:0 10px 30px rgba(22,36,28,.12)}
+:root{--green:#4A8BC2;--greenD:#3570a8;--greenL:#E8F0F7;--ink:#1F2A44;--bg:#F4F2ED;--card:#FFFFFF;--mut:#8A8F9C;--line:rgba(31,42,68,.08);--amber:#F5B301;--shadow:0 10px 30px rgba(31,42,68,.12)}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);height:100dvh;overflow:hidden;overscroll-behavior:none}
 #map{position:fixed;top:64px;left:0;right:0;bottom:0}
-.mk{width:36px;height:36px;border-radius:12px;background:#fff;box-shadow:0 4px 14px rgba(22,36,28,.25);display:flex;align-items:center;justify-content:center;font-size:16px;border:1.5px solid transparent;transition:.2s}
+.mk{width:36px;height:36px;border-radius:12px;background:#fff;box-shadow:0 4px 14px rgba(31,42,68,.25);display:flex;align-items:center;justify-content:center;font-size:16px;border:1.5px solid transparent;transition:.2s}
 .mk.active{background:var(--green);border-color:var(--green)}
 .upin{position:relative;pointer-events:none}
-.upin .halo{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);width:26px;height:10px;border-radius:99px;background:rgba(46,158,91,.25);animation:halo 2s infinite}
+.upin .halo{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);width:26px;height:10px;border-radius:99px;background:rgba(74,139,194,.25);animation:halo 2s infinite}
 @keyframes halo{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.35)}}
 
 /* green brand header */
@@ -35,7 +35,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 #compassNeedle{transition:transform .3s}
 
 /* bottom sheet */
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:480px;margin:0 auto;background:var(--card);border-radius:24px 24px 0 0;box-shadow:0 -12px 40px rgba(22,36,28,.16);touch-action:none;padding-bottom:64px}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:480px;margin:0 auto;background:var(--card);border-radius:24px 24px 0 0;box-shadow:0 -12px 40px rgba(31,42,68,.16);touch-action:none;padding-bottom:64px}
 .sheet.anim{transition:transform .3s cubic-bezier(.2,.9,.25,1)}
 .handle{padding:10px 0 6px;cursor:grab}
 .grab{width:44px;height:5px;border-radius:99px;background:#DDE3DD;margin:0 auto}
@@ -71,7 +71,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .pay.sel{border-color:var(--green);background:var(--greenL)}
 .pay .pi{font-size:17px;display:block;margin-bottom:2px}
 
-.cta{width:100%;margin-top:12px;padding:17px;border:none;border-radius:16px;cursor:pointer;font:800 16px 'Plus Jakarta Sans';color:#fff;background:var(--green);box-shadow:0 8px 22px rgba(46,158,91,.35)}
+.cta{width:100%;margin-top:12px;padding:17px;border:none;border-radius:16px;cursor:pointer;font:800 16px 'Plus Jakarta Sans';color:#fff;background:var(--green);box-shadow:0 8px 22px rgba(74,139,194,.35)}
 .cta:active{transform:scale(.99)}.cta:disabled{opacity:.4;box-shadow:none}
 .cta .s{display:block;font-size:11px;font-weight:600;opacity:.9;margin-top:2px}
 .ghost{width:100%;margin-top:9px;padding:13px;border-radius:16px;border:none;background:var(--bg);color:var(--ink);font:700 13px 'Plus Jakarta Sans';cursor:pointer}
@@ -81,11 +81,11 @@ h2{font-size:17px;font-weight:800}.sub{font-size:12.5px;color:var(--mut);font-we
 /* providers */
 .prov{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:16px;padding:12px 14px;margin-bottom:9px;cursor:pointer;border:1.5px solid transparent}
 .prov.sel{border-color:var(--green);background:#fff;box-shadow:var(--shadow)}
-.pav{width:44px;height:44px;border-radius:99px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:21px;flex:none;box-shadow:0 2px 8px rgba(22,36,28,.08)}
+.pav{width:44px;height:44px;border-radius:99px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:21px;flex:none;box-shadow:0 2px 8px rgba(31,42,68,.08)}
 .prov .info{flex:1;min-width:0}
 .prov .n{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:6px}
 .prov .d{font-size:11px;color:var(--mut);font-weight:500;margin-top:1px}
-.vbadge{font-size:8.5px;font-weight:800;color:var(--green);border:1px solid rgba(46,158,91,.4);border-radius:6px;padding:1.5px 5px}
+.vbadge{font-size:8.5px;font-weight:800;color:var(--green);border:1px solid rgba(74,139,194,.4);border-radius:6px;padding:1.5px 5px}
 .prov .eta{text-align:right}.prov .eta b{font-size:15px}.prov .eta span{display:block;font-size:10px;color:var(--mut);font-weight:600}
 
 /* tracking */
@@ -108,6 +108,15 @@ h2{font-size:17px;font-weight:800}.sub{font-size:12.5px;color:var(--mut);font-we
 
 .toast{position:fixed;top:76px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:50;background:var(--ink);color:#fff;font-size:12.5px;font-weight:600;padding:11px 18px;border-radius:99px;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* mobile-only phone frame on wider screens */
+@media(min-width:520px){
+  html,body{background:#0F1319}
+  .brand{left:50%;right:auto;transform:translateX(-50%);width:440px;max-width:440px;border-radius:0 0 0 0}
+  #map{left:50%;right:auto;transform:translateX(-50%);width:440px}
+  .sheet,.bnav{max-width:440px}
+  .mapctl{right:calc(50vw - 220px + 10px)}
+  .toast{top:80px}
+}
 </style>
 </head>
 <body>
@@ -122,9 +131,9 @@ h2{font-size:17px;font-weight:800}.sub{font-size:12.5px;color:var(--mut);font-we
 <div id="map"></div>
 
 <div class="mapctl" id="mapCtl">
-  <button class="mbtn" onclick="ctlCompass()"><svg id="compassNeedle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="rgba(22,36,28,.25)" stroke-width="1.5"/><path d="M12 3.5 15 12H9L12 3.5Z" fill="#E5484D"/><path d="M12 20.5 9 12h6l-3 8.5Z" fill="#16241C"/></svg></button>
+  <button class="mbtn" onclick="ctlCompass()"><svg id="compassNeedle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="rgba(31,42,68,.25)" stroke-width="1.5"/><path d="M12 3.5 15 12H9L12 3.5Z" fill="#E5484D"/><path d="M12 20.5 9 12h6l-3 8.5Z" fill="#1F2A44"/></svg></button>
   <button class="mbtn" id="btn3d" onclick="ctl3D()">3D</button>
-  <button class="mbtn" onclick="ctlLocate()"><svg viewBox="0 0 24 24" fill="none" stroke="#16241C" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.4" fill="#16241C" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+  <button class="mbtn" onclick="ctlLocate()"><svg viewBox="0 0 24 24" fill="none" stroke="#1F2A44" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.4" fill="#1F2A44" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
   <div class="zoompill"><button onclick="ctlZoom(1)">+</button><button onclick="ctlZoom(-1)">−</button></div>
 </div>
 
@@ -260,7 +269,7 @@ function ctl3D(){if(!map)return;try{if((map.getTilt()||0)>0){map.setTilt(0);map.
 function ctlLocate(){if(!navigator.geolocation)return toast('Location off');toast('Finding you…');navigator.geolocation.getCurrentPosition(p=>{user={lat:p.coords.latitude,lng:p.coords.longitude};if(userMarker)userMarker.move(user);if(map){map.panTo(user);map.setZoom(16);}},()=>toast('Could not locate'),{enableHighAccuracy:true,timeout:8000});}
 function ov(pos,html){const o=new google.maps.OverlayView();o.pos=pos;o.onAdd=function(){this.d=document.createElement('div');this.d.style.cssText='position:absolute;transform:translate(-50%,-50%)';this.d.innerHTML=html;this.getPanes().overlayMouseTarget.appendChild(this.d)};o.draw=function(){if(!this.d)return;const pr=this.getProjection();if(!pr)return;const p=pr.fromLatLngToDivPixel(new google.maps.LatLng(this.pos));this.d.style.left=p.x+'px';this.d.style.top=p.y+'px'};o.move=function(x){this.pos=x;this.draw()};o.el=function(){return this.d};o.setMap(map);return o;}
 function boot(){if(started)return;started=true;
-  userMarker=ov(user,'<div class="upin"><div class="halo"></div><svg width="48" height="58" viewBox="0 0 52 62" style="transform:translateY(-40%)"><path d="M26 2C13 2 3 12 3 25c0 16 23 35 23 35s23-19 23-35C49 12 39 2 26 2Z" fill="#2E9E5B"/><circle cx="26" cy="24" r="9" fill="#fff"/></svg></div>');
+  userMarker=ov(user,'<div class="upin"><div class="halo"></div><svg width="48" height="58" viewBox="0 0 52 62" style="transform:translateY(-40%)"><path d="M26 2C13 2 3 12 3 25c0 16 23 35 23 35s23-19 23-35C49 12 39 2 26 2Z" fill="#4A8BC2"/><circle cx="26" cy="24" r="9" fill="#fff"/></svg></div>');
   let idx=0;
   Object.keys(NAMES).forEach(svc=>NAMES[svc].forEach(n=>{const pos={lat:user.lat+R(-.012,.012),lng:user.lng+R(-.012,.012)};providers.push({i:idx++,svc,name:n[0],role:n[1],face:n[2],pos,m:null,eta:0});}));
   loadRealProviders();setInterval(loadRealProviders,15000);
@@ -279,7 +288,7 @@ async function loadRealProviders(){
     });
   }catch(e){}
 }
-function drawRoute(on){if(line){line.setMap(null);line=null;}if(on&&trip){line=new google.maps.Polyline({path:[trip.pos,user],map,strokeOpacity:0,strokeWeight:3.5,icons:[{icon:{path:'M 0,-1 0,1',strokeOpacity:.9,strokeWeight:3.5,strokeColor:'#2E9E5B',scale:2},offset:'0',repeat:'14px'}]});}}
+function drawRoute(on){if(line){line.setMap(null);line=null;}if(on&&trip){line=new google.maps.Polyline({path:[trip.pos,user],map,strokeOpacity:0,strokeWeight:3.5,icons:[{icon:{path:'M 0,-1 0,1',strokeOpacity:.9,strokeWeight:3.5,strokeColor:'#4A8BC2',scale:2},offset:'0',repeat:'14px'}]});}}
 
 /* ===== sheet drag ===== */
 const sheet=$('sheet'),inner=$('inner');
@@ -337,7 +346,7 @@ async function sendCode(){$('sendBtn').disabled=true;$('sendBtn').textContent='S
   $('sendBtn').disabled=false;$('sendBtn').textContent='Send Code';if(error)return toast(error.message);$('codeSub').textContent='Code sent to '+target;go('pA2');setSnap('full');}
 async function verifyCode(){const code=$('authCode').value.trim();if(code.length<6)return toast('Enter the code');$('verifyBtn').disabled=true;$('verifyBtn').textContent='Verifying…';let res;if(authMode==='email')res=await sb.auth.verifyOtp({email:$('authEmail').value.trim(),token:code,type:'email'});else res=await sb.auth.verifyOtp({phone:normPhone($('authPhone').value.trim()).e164,token:code,type:'sms'});$('verifyBtn').disabled=false;$('verifyBtn').textContent='Verify & Continue';if(res.error)return toast(res.error.message);session=res.data.session;toast('Signed in ✓');if(pendingReq){pendingReq=false;requestProvider();}else backToHome();}
 
-function confetti(){const cols=['#2E9E5B','#FCD116','#CE1126','#4A8BC2'];for(let i=0;i<70;i++){const c=document.createElement('div');c.style.cssText=`position:fixed;top:-16px;left:${Math.random()*100}vw;width:9px;height:13px;z-index:99;background:${cols[i%4]};border-radius:${Math.random()>.5?'99px':'2px'};animation:cf ${2+Math.random()*2}s ${Math.random()*.7}s linear forwards;pointer-events:none`;document.body.appendChild(c);setTimeout(()=>c.remove(),5200);}}
+function confetti(){const cols=['#4A8BC2','#FCD116','#CE1126','#4A8BC2'];for(let i=0;i<70;i++){const c=document.createElement('div');c.style.cssText=`position:fixed;top:-16px;left:${Math.random()*100}vw;width:9px;height:13px;z-index:99;background:${cols[i%4]};border-radius:${Math.random()>.5?'99px':'2px'};animation:cf ${2+Math.random()*2}s ${Math.random()*.7}s linear forwards;pointer-events:none`;document.body.appendChild(c);setTimeout(()=>c.remove(),5200);}}
 const st=document.createElement('style');st.textContent='@keyframes cf{to{transform:translateY(105vh) rotate(720deg)}}';document.head.appendChild(st);
 window.initMap=initMap;
 </script>
