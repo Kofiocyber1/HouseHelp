@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HouseHelp — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1F2A44;--blue:#4A8BC2;--blueL:#E8F0F7;--bg:#F4F2ED;--card:#FFFFFF;--mut:#8A8F9C;--ok:#1FA97A;--amber:#F5B301;--red:#E5484D;--line:rgba(31,42,68,.1);--shadow:0 8px 26px rgba(31,42,68,.1)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100dvh}
+.flag{height:5px;background:linear-gradient(90deg,#CE1126 0 33%,#FCD116 33% 66%,#006B3F 66% 100%)}
+nav{background:var(--ink);color:#fff;padding:16px 5vw;display:flex;justify-content:space-between;align-items:center}
+nav .brand{font-size:20px;font-weight:800}.brand span{color:#FFE08A}
+nav .who{font-size:13px;color:#B9C4D6;font-weight:600}
+nav a{color:#9FC2E2;text-decoration:none;font-weight:700;font-size:13px;margin-left:16px}
+.wrap{max-width:1100px;margin:0 auto;padding:26px 5vw 60px}
+
+/* login */
+.login{max-width:420px;margin:60px auto;background:var(--card);border-radius:22px;padding:34px 28px;box-shadow:var(--shadow)}
+.login h1{font-size:24px;font-weight:800}.login p{color:var(--mut);font-size:14px;font-weight:500;margin:8px 0 18px}
+.login input{width:100%;padding:14px 16px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);font:600 15px 'Plus Jakarta Sans';color:var(--ink);outline:none;margin-bottom:10px}
+.login input:focus{border-color:var(--blue)}
+.btn{width:100%;padding:15px;border:none;border-radius:14px;background:var(--blue);color:#fff;font:800 15px 'Plus Jakarta Sans';cursor:pointer}
+.btn:disabled{opacity:.4}
+.ghost{background:var(--bg);color:var(--ink)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+@media(max-width:640px){.stats{grid-template-columns:1fr 1fr}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+.stat b{font-size:30px;font-weight:800;color:var(--blue);display:block;font-family:'Plus Jakarta Sans'}
+.stat span{font-size:11.5px;color:var(--mut);font-weight:700;letter-spacing:.3px}
+
+/* tabs */
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tabs button{padding:11px 20px;border:1.5px solid var(--line);border-radius:99px;background:var(--card);font:700 13.5px 'Plus Jakarta Sans';color:var(--ink);cursor:pointer}
+.tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.row{display:flex;align-items:center;gap:14px;padding:15px 18px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:none}
+.av{width:44px;height:44px;border-radius:99px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:21px;flex:none}
+.row .info{flex:1;min-width:0}
+.row .n{font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.row .d{font-size:12px;color:var(--mut);font-weight:500;margin-top:2px}
+.badge{font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:99px}
+.badge.ok{background:var(--blueL);color:var(--blue)}
+.badge.pend{background:#FBEED0;color:#8A6D00}
+.badge.on{background:#DFF5E9;color:var(--ok)}
+.badge.off{background:#EFEFEF;color:var(--mut)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.act{padding:9px 13px;border:none;border-radius:10px;font:700 12px 'Plus Jakarta Sans';cursor:pointer;background:var(--bg);color:var(--ink)}
+.act.go{background:var(--blue);color:#fff}
+.act.done{background:var(--ok);color:#fff}
+.media{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.media a img,.media a video{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#000}
+.empty{text-align:center;color:var(--mut);font-size:13.5px;font-weight:600;padding:44px 0}
+.pill{font-size:11px;font-weight:800;padding:4px 10px;border-radius:99px;background:var(--bg);color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="flag"></div>
+<nav>
+  <div class="brand">House<span>Help</span> · Admin</div>
+  <div><span class="who" id="who"></span><a href="index.html">Customer app</a><a href="worker.html">Helper app</a><a href="#" onclick="signOut();return false" id="soLink" style="display:none">Sign out</a></div>
+</nav>
+
+<!-- login -->
+<div class="login" id="login">
+  <h1>Admin sign-in</h1>
+  <p>Enter your admin email to receive a verification code.</p>
+  <div id="lg1">
+    <input id="email" type="email" placeholder="admin@email.com">
+    <button class="btn" id="sendBtn" onclick="sendCode()">Send Code</button>
+  </div>
+  <div id="lg2" style="display:none">
+    <input id="code" inputmode="numeric" placeholder="Enter code" style="text-align:center;letter-spacing:5px;font-size:18px">
+    <button class="btn" id="verifyBtn" onclick="verifyCode()">Verify & Enter</button>
+    <button class="btn ghost" style="margin-top:8px" onclick="document.getElementById('lg1').style.display='block';document.getElementById('lg2').style.display='none'">Back</button>
+  </div>
+  <p id="lmsg" style="color:var(--red);display:none"></p>
+</div>
+
+<!-- dashboard -->
+<div class="wrap" id="dash" style="display:none">
+  <div class="stats">
+    <div class="stat"><b id="sProv">0</b><span>PROVIDERS</span></div>
+    <div class="stat"><b id="sOnline">0</b><span>ONLINE NOW</span></div>
+    <div class="stat"><b id="sBook">0</b><span>BOOKINGS</span></div>
+    <div class="stat"><b id="sWait">0</b><span>WAITLIST</span></div>
+  </div>
+  <div class="tabs">
+    <button class="on" id="tabProv" onclick="showTab('prov')">🧑🏾‍⚕️ Providers</button>
+    <button id="tabBook" onclick="showTab('book')">📋 Bookings</button>
+    <button id="tabWait" onclick="showTab('wait')">📝 Waitlist</button>
+  </div>
+  <div class="card" id="list"><div class="empty">Loading…</div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const sb=window.supabase.createClient('https://wgzlcftxkrohiwxwbgaw.supabase.co','sb_publishable_nV3n7aZ74z9YdZ4shmdiCg_DA0mrODn');
+const $=id=>document.getElementById(id);
+let session=null,tab='prov',cache={};
+const SVCMETA={nurse:['🩺','Nurse'],cook:['🍲','Cook'],cleaner:['🧹','Cleaner'],elderly_care:['🤝','Elderly Care'],care_aide:['🦽','Care Aide'],house_help:['🏠','House Help']};
+
+sb.auth.getSession().then(async ({data})=>{if(data.session){session=data.session;await enter();}});
+async function sendCode(){const e=$('email').value.trim();if(!e.includes('@'))return alert('Enter a valid email');$('sendBtn').disabled=true;$('sendBtn').textContent='Sending…';const {error}=await sb.auth.signInWithOtp({email:e,options:{shouldCreateUser:false}});$('sendBtn').disabled=false;$('sendBtn').textContent='Send Code';if(error)return alert(error.message);$('lg1').style.display='none';$('lg2').style.display='block';}
+async function verifyCode(){const code=$('code').value.trim();if(code.length<6)return alert('Enter the code');$('verifyBtn').disabled=true;$('verifyBtn').textContent='Verifying…';const {data,error}=await sb.auth.verifyOtp({email:$('email').value.trim(),token:code,type:'email'});$('verifyBtn').disabled=false;$('verifyBtn').textContent='Verify & Enter';if(error)return alert(error.message);session=data.session;await enter();}
+async function signOut(){await sb.auth.signOut();location.reload();}
+
+async function enter(){
+  let admin=false;
+  try{const {data}=await sb.rpc('hh_is_admin');admin=!!data;}catch(e){}
+  if(!admin){$('lmsg').style.display='block';$('lmsg').textContent='This account is not an admin.';await sb.auth.signOut();return;}
+  $('login').style.display='none';$('dash').style.display='block';$('soLink').style.display='inline';
+  $('who').textContent=session.user.email||'admin';
+  loadStats();showTab('prov');
+}
+async function loadStats(){
+  try{
+    const [prov,book,wait]=await Promise.all([
+      sb.from('hh_providers').select('id,is_online'),
+      sb.from('hh_bookings').select('id'),
+      sb.from('hh_waitlist').select('id')
+    ]);
+    $('sProv').textContent=(prov.data||[]).length;
+    $('sOnline').textContent=(prov.data||[]).filter(p=>p.is_online).length;
+    $('sBook').textContent=(book.data||[]).length;
+    $('sWait').textContent=(wait.data||[]).length;
+  }catch(e){}
+}
+function showTab(t){tab=t;['prov','book','wait'].forEach(x=>$('tab'+x[0].toUpperCase()+x.slice(1)).classList.toggle('on',x===t));$('list').innerHTML='<div class="empty">Loading…</div>';if(t==='prov')loadProviders();else if(t==='book')loadBookings();else loadWaitlist();}
+
+async function loadProviders(){
+  const {data,error}=await sb.from('hh_providers').select('id,service,rating,jobs_completed,license_verified,is_online,hh_profiles(full_name,verified,id_verified)').order('updated_at',{ascending:false});
+  if(error){$('list').innerHTML='<div class="empty">'+error.message+'</div>';return;}
+  if(!data||!data.length){$('list').innerHTML='<div class="empty">No providers registered yet.</div>';return;}
+  $('list').innerHTML=data.map(p=>{const sm=SVCMETA[p.service]||['🛎️','Service'];const prof=p.hh_profiles||{};
+    return `<div class="row">
+      <div class="av">${sm[0]}</div>
+      <div class="info"><div class="n">${prof.full_name||'Provider'}
+        <span class="badge ${p.is_online?'on':'off'}">${p.is_online?'ONLINE':'offline'}</span>
+        <span class="badge ${p.license_verified?'ok':'pend'}">${p.license_verified?'✓ Licence':'Licence pending'}</span>
+        <span class="badge ${prof.id_verified?'ok':'pend'}">${prof.id_verified?'✓ ID':'ID pending'}</span>
+      </div><div class="d">${sm[1]} · ${p.rating}★ · ${p.jobs_completed} jobs</div></div>
+      <div class="actions">
+        <button class="act ${p.license_verified?'':'go'}" onclick="verifyLicence('${p.id}',${!p.license_verified})">${p.license_verified?'Unverify licence':'Verify licence'}</button>
+        <button class="act ${prof.id_verified?'':'go'}" onclick="verifyID('${p.id}',${!prof.id_verified})">${prof.id_verified?'Unverify ID':'Verify ID'}</button>
+      </div></div>`;}).join('');
+}
+async function verifyLicence(id,val){await sb.from('hh_providers').update({license_verified:val}).eq('id',id);loadProviders();}
+async function verifyID(id,val){await sb.from('hh_profiles').update({id_verified:val}).eq('id',id);loadProviders();}
+
+async function loadBookings(){
+  const {data,error}=await sb.from('hh_bookings').select('id,service,status,address,duration_hours,notes,customer_rating,provider_rating,work_media,created_at,nhis_used').order('created_at',{ascending:false}).limit(60);
+  if(error){$('list').innerHTML='<div class="empty">'+error.message+'</div>';return;}
+  if(!data||!data.length){$('list').innerHTML='<div class="empty">No bookings yet.</div>';return;}
+  $('list').innerHTML=data.map(b=>{const sm=SVCMETA[b.service]||['🛎️','Service'];const d=new Date(b.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const media=(b.work_media||[]).map(u=>{const vid=/\.(mp4|mov|webm)$/i.test(u);return `<a href="${u}" target="_blank">${vid?`<video src="${u}" muted></video>`:`<img src="${u}">`}</a>`;}).join('');
+    const cr=b.customer_rating?'You→helper '+b.customer_rating+'★':'';const pr=b.provider_rating?'Helper→you '+b.provider_rating+'★':'';
+    return `<div class="row"><div class="av">${sm[0]}</div>
+      <div class="info"><div class="n">${sm[1]} <span class="pill">${b.status}</span>${b.nhis_used?'<span class="pill">NHIS</span>':''}</div>
+      <div class="d">${d} · ${b.address||'—'}${b.duration_hours?' · '+b.duration_hours+'h':''}${b.notes?' · “'+b.notes+'”':''}</div>
+      ${(cr||pr)?`<div class="d" style="color:var(--amber);font-weight:700">${[cr,pr].filter(Boolean).join(' · ')}</div>`:''}
+      ${media?`<div class="media">${media}</div>`:''}
+      </div></div>`;}).join('');
+}
+async function loadWaitlist(){
+  const {data,error}=await sb.from('hh_waitlist').select('*').order('created_at',{ascending:false});
+  if(error){$('list').innerHTML='<div class="empty">'+error.message+'</div>';return;}
+  if(!data||!data.length){$('list').innerHTML='<div class="empty">No waitlist signups yet.</div>';return;}
+  $('list').innerHTML=data.map(w=>{const d=new Date(w.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    return `<div class="row"><div class="av">📝</div><div class="info"><div class="n">${w.full_name}</div><div class="d">${w.phone||w.email||'—'} · ${w.city||'—'} · ${(w.services||[]).join(', ')||'any'}</div></div><span class="pill">${d}</span></div>`;}).join('');
+}
+</script>
+</body>
+</html>
