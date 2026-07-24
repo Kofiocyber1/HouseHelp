@@ -108,6 +108,20 @@ h2{font-size:17px;font-weight:800}.sub{font-size:12.5px;color:var(--mut);font-we
 
 .toast{position:fixed;top:76px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:50;background:var(--ink);color:#fff;font-size:12.5px;font-weight:600;padding:11px 18px;border-radius:99px;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;box-shadow:var(--shadow)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* slide-up panels */
+.panel{position:fixed;inset:0;z-index:85;background:rgba(31,42,68,.5);backdrop-filter:blur(4px);display:none;align-items:flex-end}
+.panel.show{display:flex}
+.panelcard{width:100%;max-width:440px;margin:0 auto;background:var(--card);border-radius:24px 24px 0 0;max-height:84vh;display:flex;flex-direction:column;animation:pup .3s ease both}
+@keyframes pup{from{transform:translateY(100%)}to{transform:none}}
+.panelhd{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;border-bottom:1px solid var(--line);flex:none}
+.panelhd h2{font-size:18px;font-weight:800}
+.panelhd button{width:34px;height:34px;border:none;border-radius:99px;background:var(--bg);color:var(--ink);font-size:15px;cursor:pointer}
+.panelbody{padding:14px 20px 26px;overflow-y:auto}
+.pitem{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line);font-size:14px;font-weight:600}
+.pitem:last-child{border-bottom:none}
+.pbtn{width:100%;padding:15px;border:none;border-radius:14px;background:var(--green);color:#fff;font:800 15px 'Plus Jakarta Sans';cursor:pointer;margin-top:14px}
+.pbtn.ghost{background:var(--bg);color:var(--ink)}
+.pempty{text-align:center;color:var(--mut);font-size:13px;padding:34px 0;font-weight:600}
 /* mobile-only phone frame on wider screens */
 @media(min-width:520px){
   html,body{background:#0F1319}
@@ -124,7 +138,7 @@ h2{font-size:17px;font-weight:800}.sub{font-size:12.5px;color:var(--mut);font-we
 <div class="brand">
   <div class="row">
     <div><h1>House<span>Help</span></h1><div class="sub">Cape Coast & Accra · care to your door</div></div>
-    <div class="ic" onclick="toast('No new notifications')">🔔</div>
+    <div class="ic" onclick="openNotifs()">🔔</div>
   </div>
 </div>
 
@@ -207,11 +221,19 @@ h2{font-size:17px;font-weight:800}.sub{font-size:12.5px;color:var(--mut);font-we
 </div>
 
 <nav class="bnav">
-  <a class="on" href="#" onclick="resetAll();return false"><span class="bi">🏠</span>Home</a>
-  <a href="#" onclick="toast('Your bookings appear here');return false"><span class="bi">🕐</span>Bookings</a>
+  <a class="on" href="#" onclick="closePanel();resetAll();return false"><span class="bi">🏠</span>Home</a>
+  <a href="#" onclick="openBookings();return false"><span class="bi">🕐</span>Bookings</a>
   <a href="worker.html"><span class="bi">💼</span>Work</a>
-  <a href="#" onclick="toast('Account — sign in to view');return false"><span class="bi">👤</span>Account</a>
+  <a href="#" onclick="openAccount();return false"><span class="bi">👤</span>Account</a>
 </nav>
+
+<!-- slide-up panel -->
+<div class="panel" id="panel">
+  <div class="panelcard">
+    <div class="panelhd"><h2 id="panelTitle">—</h2><button onclick="closePanel()">✕</button></div>
+    <div class="panelbody" id="panelBody"></div>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
@@ -345,6 +367,27 @@ async function sendCode(){$('sendBtn').disabled=true;$('sendBtn').textContent='S
   else{const ph=normPhone($('authPhone').value.trim());if(!ph.valid){$('sendBtn').disabled=false;$('sendBtn').textContent='Send Code';return toast('Enter a valid Ghana number, e.g. 024 123 4567');}target=ph.e164;({error}=await sb.auth.signInWithOtp({phone:target,options:{shouldCreateUser:true}}));}
   $('sendBtn').disabled=false;$('sendBtn').textContent='Send Code';if(error)return toast(error.message);$('codeSub').textContent='Code sent to '+target;go('pA2');setSnap('full');}
 async function verifyCode(){const code=$('authCode').value.trim();if(code.length<6)return toast('Enter the code');$('verifyBtn').disabled=true;$('verifyBtn').textContent='Verifying…';let res;if(authMode==='email')res=await sb.auth.verifyOtp({email:$('authEmail').value.trim(),token:code,type:'email'});else res=await sb.auth.verifyOtp({phone:normPhone($('authPhone').value.trim()).e164,token:code,type:'sms'});$('verifyBtn').disabled=false;$('verifyBtn').textContent='Verify & Continue';if(res.error)return toast(res.error.message);session=res.data.session;toast('Signed in ✓');if(pendingReq){pendingReq=false;requestProvider();}else backToHome();}
+
+/* ===== functional panels ===== */
+function openPanel(title,html){$('panelTitle').textContent=title;$('panelBody').innerHTML=html;$('panel').classList.add('show');}
+function closePanel(){$('panel').classList.remove('show');}
+$('panel').addEventListener('click',e=>{if(e.target.id==='panel')closePanel();});
+const DBSVCMETA={nurse:['🩺','Nurse'],cook:['🍲','Cook'],cleaner:['🧹','Cleaner'],elderly_care:['🤝','Elderly Care'],care_aide:['🦽','Care Aide'],house_help:['🏠','House Help']};
+async function openBookings(){
+  if(!session){openPanel('Your bookings','<div class="pempty">Sign in to see your bookings.<br>Pick a service and tap Book to sign in.</div>');return;}
+  openPanel('Your bookings','<div class="pempty">Loading…</div>');
+  try{const {data}=await sb.from('hh_bookings').select('service,status,created_at,address,nhis_used').eq('customer_id',session.user.id).order('created_at',{ascending:false}).limit(40);
+    if(!data||!data.length){$('panelBody').innerHTML='<div class="pempty">No bookings yet.<br>Book a helper and it will appear here.</div>';return;}
+    $('panelBody').innerHTML=data.map(b=>{const sm=DBSVCMETA[b.service]||['🛎️','Service'];const d=new Date(b.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'});const done=b.status==='completed';return `<div class="pitem"><div><b>${sm[0]} ${sm[1]}</b><div style="font-size:11.5px;color:var(--mut);font-weight:500">${d} · ${b.address||'—'}</div></div><div style="text-align:right"><b style="color:${done?'var(--green)':'var(--mut)'}">${done?'Completed':b.status}</b></div></div>`;}).join('');
+  }catch(e){$('panelBody').innerHTML='<div class="pempty">Could not load bookings.</div>';}
+}
+async function openAccount(){
+  if(!session){openPanel('Account','<div class="pempty">You are not signed in.<br>Pick a service and tap Book to sign in with email or phone.</div>');return;}
+  const email=session.user.email||session.user.phone||'Signed in';
+  openPanel('Account',`<div class="pitem"><span>Signed in as</span><b>${email}</b></div><div class="pitem"><span>Payment</span><b>MoMo / Card / Cash / NHIS</b></div><button class="pbtn ghost" onclick="signOutCust()">Sign out</button>`);
+}
+async function signOutCust(){try{await sb.auth.signOut();}catch(e){}session=null;closePanel();toast('Signed out');}
+function openNotifs(){openPanel('Notifications','<div class="pempty">You are all caught up 🎉<br>Booking updates will appear here.</div>');}
 
 function confetti(){const cols=['#4A8BC2','#FCD116','#CE1126','#4A8BC2'];for(let i=0;i<70;i++){const c=document.createElement('div');c.style.cssText=`position:fixed;top:-16px;left:${Math.random()*100}vw;width:9px;height:13px;z-index:99;background:${cols[i%4]};border-radius:${Math.random()>.5?'99px':'2px'};animation:cf ${2+Math.random()*2}s ${Math.random()*.7}s linear forwards;pointer-events:none`;document.body.appendChild(c);setTimeout(()=>c.remove(),5200);}}
 const st=document.createElement('style');st.textContent='@keyframes cf{to{transform:translateY(105vh) rotate(720deg)}}';document.head.appendChild(st);

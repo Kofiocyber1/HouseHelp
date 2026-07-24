@@ -101,6 +101,24 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .bnav a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--mut);text-decoration:none}
 .bnav a.on{color:var(--green)}.bnav a .bi{font-size:19px}
 .flag{position:fixed;top:0;left:0;right:0;height:4px;z-index:80;background:linear-gradient(90deg,#CE1126 0 33%,#FCD116 33% 66%,#006B3F 66% 100%)}
+/* draggable sheet */
+.sheet{touch-action:none;will-change:transform}
+.handle{cursor:grab}
+.irow,.statusrow .ic,.tbtn,.bnav a{cursor:pointer}
+/* slide-up panels */
+.panel{position:fixed;inset:0;z-index:85;background:rgba(31,42,68,.5);backdrop-filter:blur(4px);display:none;align-items:flex-end}
+.panel.show{display:flex}
+.panelcard{width:100%;max-width:440px;margin:0 auto;background:var(--card);border-radius:24px 24px 0 0;max-height:84vh;display:flex;flex-direction:column;animation:slideup .3s ease both}
+.panelhd{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;border-bottom:1px solid var(--line);flex:none}
+.panelhd h2{font-size:18px;font-weight:800}
+.panelhd button{width:34px;height:34px;border:none;border-radius:99px;background:var(--bg);color:var(--ink);font-size:15px;cursor:pointer}
+.panelbody{padding:14px 20px 26px;overflow-y:auto}
+.pitem{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line);font-size:14px;font-weight:600}
+.pitem:last-child{border-bottom:none}
+.pbtn{width:100%;padding:15px;border:none;border-radius:14px;background:var(--blue);color:#fff;font:800 15px 'Plus Jakarta Sans';cursor:pointer;margin-top:14px}
+.pbtn.ghost{background:var(--bg);color:var(--ink)}
+.pfield{width:100%;padding:13px 15px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);font:600 14px 'Plus Jakarta Sans';color:var(--ink);outline:none;margin-top:8px}
+.pempty{text-align:center;color:var(--mut);font-size:13px;padding:34px 0;font-weight:600}
 /* mobile-only phone frame on wider screens */
 @media(min-width:520px){
   html,body{background:#0F1319}
@@ -119,9 +137,17 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 
 <!-- top -->
 <div class="top" id="topBar" style="display:none">
-  <button class="tbtn" onclick="toast('Menu (demo)')">☰</button>
-  <div class="earnpill"><b>GH₵</b> <span id="earnAmt">0</span></div>
-  <button class="tbtn" onclick="toast('No new notifications')">🔔</button>
+  <button class="tbtn" onclick="openMenu()">☰</button>
+  <div class="earnpill" onclick="openEarnings()"><b>GH₵</b> <span id="earnAmt">0</span></div>
+  <button class="tbtn" onclick="openNotifs()">🔔</button>
+</div>
+
+<!-- slide-up panel -->
+<div class="panel" id="panel">
+  <div class="panelcard">
+    <div class="panelhd"><h2 id="panelTitle">—</h2><button onclick="closePanel()">✕</button></div>
+    <div class="panelbody" id="panelBody"></div>
+  </div>
 </div>
 
 <!-- map controls -->
@@ -134,15 +160,15 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 
 <!-- main sheet -->
 <div class="sheet" id="sheet">
-  <div class="handle"><div class="grab"></div></div>
+  <div class="handle" id="handle"><div class="grab"></div></div>
   <div class="pad">
     <div id="idle">
       <button class="gobtn off" id="goBtn" onclick="toggleOnline()"><span class="d"></span>Go online</button>
-      <div class="statusrow"><span class="ic">⚙️</span><h2 id="statTxt">You're offline</h2><span class="ic">≡</span></div>
+      <div class="statusrow"><span class="ic" onclick="openSettings()">⚙️</span><h2 id="statTxt">You're offline</h2><span class="ic" onclick="openMenu()">≡</span></div>
       <div class="warn" id="warnCard"><span class="em" id="warnEm">⚠️</span><div><b id="warnTitle">Ready to work</b><span id="warnSub">Tap Go online to start receiving requests</span></div></div>
-      <div class="irow"><div class="l"><b>Service area</b><span id="areaSub">Cape Coast · Elmina · Komenda · Accra</span></div><span class="chev">›</span></div>
-      <div class="irow"><div class="l"><b>Your service</b><span id="svcSub">—</span></div><span class="chev">›</span></div>
-      <div class="irow"><div class="l"><b>Earnings today</b><span id="earnSub">GH₵ 0 · 0 jobs</span></div><span class="chev">›</span></div>
+      <div class="irow" onclick="openArea()"><div class="l"><b>Service area</b><span id="areaSub">Cape Coast · Elmina · Komenda · Accra</span></div><span class="chev">›</span></div>
+      <div class="irow" onclick="openSettings()"><div class="l"><b>Your service</b><span id="svcSub">—</span></div><span class="chev">›</span></div>
+      <div class="irow" onclick="openEarnings()"><div class="l"><b>Earnings today</b><span id="earnSub">GH₵ 0 · 0 jobs</span></div><span class="chev">›</span></div>
     </div>
     <div class="job" id="jobBox">
       <div class="jobhd"><div class="svcic" id="jSvc">🩺</div><div><h2 id="jTitle">Job</h2><div class="meta" id="jMeta"></div></div></div>
@@ -194,10 +220,10 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 </div>
 
 <nav class="bnav" id="bnav">
-  <a class="on" href="#"><span class="bi">🏠</span>Home</a>
-  <a href="#" onclick="toast('Earnings breakdown coming soon');return false"><span class="bi">💰</span>Earn</a>
-  <a href="#" onclick="toast('Your jobs history');return false"><span class="bi">🕐</span>Jobs</a>
-  <a href="index.html"><span class="bi">❓</span>Help</a>
+  <a class="on" href="#" onclick="closePanel();setSnap('mid');return false"><span class="bi">🏠</span>Home</a>
+  <a href="#" onclick="openEarnings();return false"><span class="bi">💰</span>Earn</a>
+  <a href="#" onclick="openJobs();return false"><span class="bi">🕐</span>Jobs</a>
+  <a href="#" onclick="openHelp();return false"><span class="bi">❓</span>Help</a>
 </nav>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -227,7 +253,68 @@ $('svcGrid').innerHTML=SERVICES.map(s=>`<div class="svc" data-id="${s[0]}" oncli
 function pickSvc(id){pickedSvc=id;document.querySelectorAll('.svc').forEach(e=>e.classList.toggle('sel',e.dataset.id===id));}
 async function saveProfile(){const name=$('name').value.trim();if(!name)return alert('Enter your name');if(!pickedSvc)return alert('Pick your service');$('saveBtn').disabled=true;$('saveBtn').textContent='Saving…';const uid=session.user.id;const {error:pe}=await sb.from('hh_profiles').upsert({id:uid,full_name:name,role:'provider'});if(pe){rst('saveBtn','Start Providing 🚀');return alert(pe.message);}const {error}=await sb.from('hh_providers').upsert({id:uid,service:pickedSvc,bio:$('bio').value.trim()||null,license_number:$('license').value.trim()||null,is_online:false});rst('saveBtn','Start Providing 🚀');if(error)return alert(error.message);me={id:uid,service:pickedSvc,name};enterApp();}
 
-function enterApp(){$('reg').classList.remove('show');$('topBar').style.display='flex';$('sheet').style.display='block';$('mapCtl').style.display='flex';$('bnav').classList.add('show');const sm=SVCMETA[me.service];$('svcSub').textContent=sm[1]+' · verified provider';$('earnSub').textContent='GH₵ '+earnings+' · '+jobsDone+' jobs';if(!map)initMap();else placeUser();}
+function enterApp(){$('reg').classList.remove('show');$('topBar').style.display='flex';$('sheet').style.display='block';$('mapCtl').style.display='flex';$('bnav').classList.add('show');const sm=SVCMETA[me.service];$('svcSub').textContent=sm[1]+' · verified provider';$('earnSub').textContent='GH₵ '+earnings+' · '+jobsDone+' jobs';if(!map)initMap();else placeUser();layoutSheet();}
+
+/* ===== flexible draggable sheet ===== */
+const sheetEl=$('sheet');
+let sheetH=0,snaps={},cur='mid',ty=0,drag=null;
+function layoutSheet(){const vh=innerHeight;sheetH=Math.min(480,Math.round(vh*0.66));sheetEl.style.height=sheetH+'px';snaps={full:0,mid:sheetH-300,min:sheetH-138};if(snaps.mid<0)snaps.mid=0;setSnap(cur,false);}
+function setSnap(name,animate=true){if(!snaps[name]&&snaps[name]!==0)return;cur=name;ty=snaps[name];sheetEl.style.transition=animate?'transform .3s cubic-bezier(.2,.9,.25,1)':'none';sheetEl.style.transform=`translateY(${ty}px)`;const c=$('mapCtl');if(c){c.style.transition=animate?'bottom .3s':'none';c.style.bottom=(sheetH-ty+12)+'px';}}
+sheetEl.addEventListener('pointerdown',e=>{drag={y0:e.clientY,ty0:ty,moved:false};sheetEl.style.transition='none';});
+addEventListener('pointermove',e=>{if(!drag)return;const dy=e.clientY-drag.y0;if(Math.abs(dy)>6)drag.moved=true;if(!drag.moved)return;ty=Math.max(snaps.full,Math.min(snaps.min,drag.ty0+dy));sheetEl.style.transform=`translateY(${ty}px)`;const c=$('mapCtl');if(c)c.style.bottom=(sheetH-ty+12)+'px';});
+addEventListener('pointerup',()=>{if(!drag)return;const moved=drag.moved;drag=null;if(!moved)return;let best='mid',bd=1e9;['full','mid','min'].forEach(n=>{const d=Math.abs(snaps[n]-ty);if(d<bd){bd=d;best=n;}});setSnap(best);});
+$('handle').addEventListener('click',()=>{if(drag&&drag.moved)return;setSnap(cur==='min'?'mid':cur==='mid'?'full':'min');});
+addEventListener('resize',layoutSheet);
+
+/* ===== functional panels ===== */
+function openPanel(title,html){$('panelTitle').textContent=title;$('panelBody').innerHTML=html;$('panel').classList.add('show');}
+function closePanel(){$('panel').classList.remove('show');}
+$('panel').addEventListener('click',e=>{if(e.target.id==='panel')closePanel();});
+function openMenu(){openPanel('Menu',`
+  <div class="pitem" style="cursor:pointer" onclick="closePanel();openSettings()"><span>⚙️ Settings & profile</span><span>›</span></div>
+  <div class="pitem" style="cursor:pointer" onclick="closePanel();openJobs()"><span>🕐 Job history</span><span>›</span></div>
+  <div class="pitem" style="cursor:pointer" onclick="closePanel();openEarnings()"><span>💰 Earnings</span><span>›</span></div>
+  <div class="pitem" style="cursor:pointer" onclick="closePanel();openArea()"><span>📍 Service area</span><span>›</span></div>
+  <div class="pitem" style="cursor:pointer" onclick="closePanel();openHelp()"><span>❓ Help & support</span><span>›</span></div>
+  <button class="pbtn ghost" onclick="signOut()">Sign out</button>`);}
+function openSettings(){const sm=SVCMETA[me.service];openPanel('Settings & profile',`
+  <label style="font-size:12px;font-weight:700;color:var(--mut)">Display name</label>
+  <input class="pfield" id="setName" value="${me.name.replace(/"/g,'&quot;')}">
+  <label style="font-size:12px;font-weight:700;color:var(--mut);display:block;margin-top:14px">Your service</label>
+  <input class="pfield" value="${sm[1]}" disabled>
+  <button class="pbtn" onclick="saveSettings()">Save changes</button>
+  <button class="pbtn ghost" onclick="signOut()">Sign out</button>`);}
+async function saveSettings(){const n=$('setName').value.trim();if(n){try{await sb.from('hh_profiles').update({full_name:n}).eq('id',me.id);me.name=n;}catch(e){}}closePanel();toast('Saved ✓');}
+function openArea(){openPanel('Service area',`
+  <p style="font-size:13px;color:var(--mut);font-weight:600;line-height:1.6;margin-bottom:8px">You'll receive booking requests from families in these areas:</p>
+  <div class="pitem"><span>📍 Cape Coast</span><b style="color:var(--blue)">Active</b></div>
+  <div class="pitem"><span>📍 Elmina</span><b style="color:var(--blue)">Active</b></div>
+  <div class="pitem"><span>📍 Komenda</span><b style="color:var(--blue)">Active</b></div>
+  <div class="pitem"><span>📍 Accra</span><b style="color:var(--blue)">Active</b></div>
+  <button class="pbtn ghost" onclick="closePanel()">Close</button>`);}
+async function openJobs(){openPanel('Job history','<div class="pempty">Loading…</div>');
+  try{const {data}=await sb.from('hh_bookings').select('service,status,created_at,address,nhis_used').eq('provider_id',me.id).order('created_at',{ascending:false}).limit(40);
+    if(!data||!data.length){$('panelBody').innerHTML='<div class="pempty">No jobs yet.<br>Go online to start receiving bookings.</div>';return;}
+    $('panelBody').innerHTML=data.map(b=>{const sm=SVCMETA[b.service]||['🛎️','Service'];const d=new Date(b.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'});const done=b.status==='completed';const fare=b.nhis_used?'NHIS':'GH₵ '+(FARES[b.service]||100);return `<div class="pitem"><div><b>${sm[0]} ${sm[1]}</b><div style="font-size:11.5px;color:var(--mut);font-weight:500">${d} · ${b.address||'—'}</div></div><div style="text-align:right"><b style="color:${done?'var(--blue)':'var(--mut)'}">${done?fare:b.status}</b></div></div>`;}).join('');
+  }catch(e){$('panelBody').innerHTML='<div class="pempty">Could not load jobs.</div>';}}
+async function openEarnings(){openPanel('Earnings','<div class="pempty">Loading…</div>');
+  try{const {data}=await sb.from('hh_bookings').select('service,nhis_used').eq('provider_id',me.id).eq('status','completed');
+    const rows=data||[];const total=rows.reduce((s,b)=>s+(b.nhis_used?0:(FARES[b.service]||100)),0);const cnt=rows.length;
+    $('panelBody').innerHTML=`<div style="text-align:center;padding:12px 0 18px"><div style="font-size:40px;font-weight:800;color:var(--blue)">GH₵ ${total}</div><div style="font-size:13px;color:var(--mut);font-weight:600">all-time earnings</div></div>
+    <div class="pitem"><span>Today</span><b>GH₵ ${earnings}</b></div>
+    <div class="pitem"><span>Completed jobs</span><b>${cnt}</b></div>
+    <div class="pitem"><span>Average per job</span><b>GH₵ ${cnt?Math.round(total/cnt):0}</b></div>
+    <div class="pitem"><span>Payout method</span><b>MTN MoMo</b></div>
+    <button class="pbtn ghost" onclick="closePanel()">Close</button>`;
+  }catch(e){$('panelBody').innerHTML='<div class="pempty">Could not load earnings.</div>';}}
+function openHelp(){openPanel('Help & support',`
+  <div class="pitem"><span>📞 Call support</span><b>0800 000 000</b></div>
+  <div class="pitem"><span>💬 WhatsApp</span><b>+233 20 000 0000</b></div>
+  <div class="pitem"><span>✉️ Email</span><b>help@househelp.gh</b></div>
+  <p style="font-size:12.5px;color:var(--mut);font-weight:500;margin-top:14px;line-height:1.6">Available 24/7. During a job, if you ever feel unsafe, tap Cancel and call support immediately.</p>
+  <button class="pbtn ghost" onclick="closePanel()">Close</button>`);}
+function openNotifs(){openPanel('Notifications','<div class="pempty">You are all caught up 🎉<br>Booking alerts will appear here.</div>');}
+async function signOut(){try{if(online)await sb.from('hh_providers').update({is_online:false}).eq('id',me.id);await sb.auth.signOut();}catch(e){}location.reload();}
 
 function initMap(){map=new google.maps.Map($('map'),{center:loc,zoom:14,disableDefaultUI:true,gestureHandling:'greedy',clickableIcons:false,mapId:'DEMO_MAP_ID',heading:0,tilt:0});map.addListener('heading_changed',()=>{const n=$('compassNeedle');if(n)n.style.transform=`rotate(${-(map.getHeading()||0)}deg)`;});if(navigator.geolocation)navigator.geolocation.getCurrentPosition(p=>{loc={lat:p.coords.latitude,lng:p.coords.longitude};map.setCenter(loc);placeUser();},()=>placeUser());else placeUser();}
 function ctlZoom(d){if(map)map.setZoom(map.getZoom()+d);}
@@ -245,7 +332,7 @@ async function toggleOnline(){online=!online;
   $('warnTitle').textContent=online?'Waiting for requests':'Ready to work';
   $('warnSub').textContent=online?'You will be notified when a family books you':'Tap Go online to start receiving requests';
   try{await sb.from('hh_providers').update({is_online:online,lat:loc.lat,lng:loc.lng}).eq('id',me.id);}catch(e){}
-  if(online)subscribe();else unsubscribe();toast(online?'You are online 🟢':'You are offline');}
+  if(online)subscribe();else unsubscribe();toast(online?'You are online 🟢':'You are offline');setSnap('mid');}
 function subscribe(){unsubscribe();channel=sb.channel('bk-'+me.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'hh_bookings',filter:'provider_id=eq.'+me.id},p=>incoming(p.new)).subscribe();pollT=setInterval(async()=>{if(job||!online)return;const {data}=await sb.from('hh_bookings').select('*').eq('provider_id',me.id).eq('status','requested').order('created_at',{ascending:false}).limit(1);if(data&&data[0])incoming(data[0]);},8000);}
 function unsubscribe(){if(channel){sb.removeChannel(channel);channel=null;}clearInterval(pollT);}
 
@@ -253,7 +340,7 @@ function incoming(b){if(job||pendingBooking)return;pendingBooking=b;const sm=SVC
 async function acceptReq(){clearInterval(reqTimer);$('reqModal').classList.remove('show');job=pendingBooking;pendingBooking=null;await sb.from('hh_bookings').update({status:'accepted'}).eq('id',job.id);showJob('accepted');if(job.lat&&job.lng){const cp={lat:job.lat,lng:job.lng};const sm=SVCMETA[job.service];custMarker=ov(cp,`<div class="mk cust">${sm[0]}</div>`);const b=new google.maps.LatLngBounds();b.extend(loc);b.extend(cp);map.fitBounds(b,90);}toast('Job accepted — head to the customer');}
 function declineReq(){clearInterval(reqTimer);$('reqModal').classList.remove('show');pendingBooking=null;}
 const FLOW={accepted:['On my way','en_route'],en_route:["I've arrived",'arrived'],arrived:['Start service','in_progress'],in_progress:['Complete & get paid','completed']};
-function showJob(status){$('idle').style.display='none';$('jobBox').classList.add('on');const sm=SVCMETA[job.service];$('jSvc').textContent=sm[0];$('jTitle').textContent=sm[1]+' booking';$('jMeta').textContent=(job.address||'Customer location')+' · GH₵ '+(job.nhis_used?'0 (NHIS)':(FARES[job.service]||100));$('jAct').textContent=FLOW[status][0];job._status=status;}
+function showJob(status){$('idle').style.display='none';$('jobBox').classList.add('on');setSnap('mid');const sm=SVCMETA[job.service];$('jSvc').textContent=sm[0];$('jTitle').textContent=sm[1]+' booking';$('jMeta').textContent=(job.address||'Customer location')+' · GH₵ '+(job.nhis_used?'0 (NHIS)':(FARES[job.service]||100));$('jAct').textContent=FLOW[status][0];job._status=status;}
 async function advanceJob(){const next=FLOW[job._status][1];await sb.from('hh_bookings').update({status:next}).eq('id',job.id);if(next==='completed'){earnings+=job.nhis_used?0:(FARES[job.service]||100);jobsDone++;$('earnAmt').textContent=earnings;$('earnSub').textContent='GH₵ '+earnings+' · '+jobsDone+' jobs';try{await sb.from('hh_providers').update({jobs_completed:jobsDone}).eq('id',me.id);}catch(e){}endJob();toast('Paid! 🎉 Nice work');}else{showJob(next);toast(next==='arrived'?'Marked as arrived':'Status updated');}}
 async function cancelJob(){if(job){await sb.from('hh_bookings').update({status:'cancelled'}).eq('id',job.id);endJob();toast('Job cancelled');}}
 function endJob(){if(custMarker){custMarker.rm();custMarker=null;}job=null;$('jobBox').classList.remove('on');$('idle').style.display='block';map.panTo(loc);map.setZoom(14);}
