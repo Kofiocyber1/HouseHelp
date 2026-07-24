@@ -119,6 +119,12 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 .pbtn.ghost{background:var(--bg);color:var(--ink)}
 .pfield{width:100%;padding:13px 15px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);font:600 14px 'Plus Jakarta Sans';color:var(--ink);outline:none;margin-top:8px}
 .pempty{text-align:center;color:var(--mut);font-size:13px;padding:34px 0;font-weight:600}
+.vpill{font-size:10px;font-weight:800;padding:4px 9px;border-radius:99px;display:inline-flex;align-items:center;gap:3px}
+.vpill.ok{background:var(--greenL);color:var(--blue)}
+.vpill.pend{background:#FBEED0;color:#8A6D00}
+.starrow{font-size:34px;letter-spacing:8px;margin:6px 0;user-select:none;text-align:center}
+.starrow span{cursor:pointer}
+.mediathumb{display:inline-block;margin:4px}.mediathumb img,.mediathumb video{width:66px;height:66px;object-fit:cover;border-radius:10px;background:#000}
 /* mobile-only phone frame on wider screens */
 @media(min-width:520px){
   html,body{background:#0F1319}
@@ -181,9 +187,11 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);c
 <!-- incoming request -->
 <div class="req" id="reqModal">
   <div class="reqcard">
-    <div class="hd"><div class="svcic" id="rSvc">🩺</div><div><h2 id="rTitle">New booking!</h2><div class="meta">A family needs your help</div></div></div>
+    <div class="hd"><div class="svcic" id="rSvc">🩺</div><div><h2 id="rTitle">New booking!</h2><div class="meta" id="rCust">Loading customer…</div></div></div>
     <div class="reqrow"><span>Service</span><b id="rService">—</b></div>
     <div class="reqrow"><span>Location</span><b id="rLoc">—</b></div>
+    <div class="reqrow"><span>Duration</span><b id="rDur">—</b></div>
+    <div class="reqrow" id="rNotesRow" style="display:none"><span>Notes</span><b id="rNotes" style="max-width:60%;text-align:right;font-weight:600">—</b></div>
     <div class="reqrow"><span>You'll earn</span><b id="rFare" style="color:var(--green)">—</b></div>
     <div class="timer"><i id="rTimer"></i></div>
     <div class="reqbtns"><button class="decline" onclick="declineReq()">Decline</button><button class="accept" onclick="acceptReq()">Accept</button></div>
@@ -336,12 +344,36 @@ async function toggleOnline(){online=!online;
 function subscribe(){unsubscribe();channel=sb.channel('bk-'+me.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'hh_bookings',filter:'provider_id=eq.'+me.id},p=>incoming(p.new)).subscribe();pollT=setInterval(async()=>{if(job||!online)return;const {data}=await sb.from('hh_bookings').select('*').eq('provider_id',me.id).eq('status','requested').order('created_at',{ascending:false}).limit(1);if(data&&data[0])incoming(data[0]);},8000);}
 function unsubscribe(){if(channel){sb.removeChannel(channel);channel=null;}clearInterval(pollT);}
 
-function incoming(b){if(job||pendingBooking)return;pendingBooking=b;const sm=SVCMETA[b.service]||['🛎️','Service'];const fare=FARES[b.service]||100;$('rSvc').textContent=sm[0];$('rService').textContent=sm[1];$('rLoc').textContent=b.address||'Customer location';$('rFare').textContent='GH₵ '+(b.nhis_used?'0 (NHIS)':fare);$('reqModal').classList.add('show');let t=20;$('rTimer').style.width='100%';reqTimer=setInterval(()=>{t--;$('rTimer').style.width=(t/20*100)+'%';if(t<=0)declineReq();},1000);}
+async function incoming(b){if(job||pendingBooking)return;pendingBooking=b;const sm=SVCMETA[b.service]||['🛎️','Service'];const fare=FARES[b.service]||100;
+  $('rSvc').textContent=sm[0];$('rService').textContent=sm[1];$('rLoc').textContent=b.address||'Customer location';$('rFare').textContent='GH₵ '+(b.nhis_used?'0 (NHIS)':fare);
+  $('rDur').textContent=b.duration_hours?(b.duration_hours>=8?'Full day':b.duration_hours+' hr'+(b.duration_hours>1?'s':'')):'—';
+  if(b.notes){$('rNotesRow').style.display='flex';$('rNotes').textContent=b.notes;}else $('rNotesRow').style.display='none';
+  $('rCust').innerHTML='Loading customer…';
+  try{const {data}=await sb.from('hh_profiles').select('full_name,verified,id_verified').eq('id',b.customer_id).single();const nm=(data&&data.full_name)||'A family';const v=data&&data.verified;$('rCust').innerHTML=nm+' '+(v?'<span class="vpill ok">✓ Verified</span>':'<span class="vpill pend">Unverified</span>');}catch(e){$('rCust').textContent='A family needs your help';}
+  $('reqModal').classList.add('show');let t=25;$('rTimer').style.width='100%';reqTimer=setInterval(()=>{t--;$('rTimer').style.width=(t/25*100)+'%';if(t<=0)declineReq();},1000);}
 async function acceptReq(){clearInterval(reqTimer);$('reqModal').classList.remove('show');job=pendingBooking;pendingBooking=null;await sb.from('hh_bookings').update({status:'accepted'}).eq('id',job.id);showJob('accepted');if(job.lat&&job.lng){const cp={lat:job.lat,lng:job.lng};const sm=SVCMETA[job.service];custMarker=ov(cp,`<div class="mk cust">${sm[0]}</div>`);const b=new google.maps.LatLngBounds();b.extend(loc);b.extend(cp);map.fitBounds(b,90);}toast('Job accepted — head to the customer');}
 function declineReq(){clearInterval(reqTimer);$('reqModal').classList.remove('show');pendingBooking=null;}
 const FLOW={accepted:['On my way','en_route'],en_route:["I've arrived",'arrived'],arrived:['Start service','in_progress'],in_progress:['Complete & get paid','completed']};
 function showJob(status){$('idle').style.display='none';$('jobBox').classList.add('on');setSnap('mid');const sm=SVCMETA[job.service];$('jSvc').textContent=sm[0];$('jTitle').textContent=sm[1]+' booking';$('jMeta').textContent=(job.address||'Customer location')+' · GH₵ '+(job.nhis_used?'0 (NHIS)':(FARES[job.service]||100));$('jAct').textContent=FLOW[status][0];job._status=status;}
-async function advanceJob(){const next=FLOW[job._status][1];await sb.from('hh_bookings').update({status:next}).eq('id',job.id);if(next==='completed'){earnings+=job.nhis_used?0:(FARES[job.service]||100);jobsDone++;$('earnAmt').textContent=earnings;$('earnSub').textContent='GH₵ '+earnings+' · '+jobsDone+' jobs';try{await sb.from('hh_providers').update({jobs_completed:jobsDone}).eq('id',me.id);}catch(e){}endJob();toast('Paid! 🎉 Nice work');}else{showJob(next);toast(next==='arrived'?'Marked as arrived':'Status updated');}}
+async function advanceJob(){const next=FLOW[job._status][1];await sb.from('hh_bookings').update({status:next}).eq('id',job.id);if(next==='completed'){earnings+=job.nhis_used?0:(FARES[job.service]||100);jobsDone++;$('earnAmt').textContent=earnings;$('earnSub').textContent='GH₵ '+earnings+' · '+jobsDone+' jobs';const bid=job.id;try{await sb.from('hh_providers').update({jobs_completed:jobsDone}).eq('id',me.id);}catch(e){}endJob();showJobComplete(bid);toast('Paid! 🎉');}else{showJob(next);toast(next==='arrived'?'Marked as arrived':'Status updated');}}
+
+/* ===== rate customer + upload work media ===== */
+let wRating=5,wMedia=[];
+function renderWStars(){$('wStarRow').innerHTML=[1,2,3,4,5].map(n=>`<span onclick="setWRating(${n})" style="color:${n<=wRating?'var(--amber)':'#D8D8D8'}">★</span>`).join('');}
+function setWRating(n){wRating=n;renderWStars();}
+function wPickMedia(e){const f=e.target.files[0];if(!f)return;wMedia.push(f);const url=URL.createObjectURL(f);const isVid=f.type.startsWith('video');$('wMediaPreview').innerHTML+=`<div class="mediathumb">${isVid?`<video src="${url}" muted></video>`:`<img src="${url}">`}</div>`;e.target.value='';}
+function showJobComplete(bid){openPanel('Job complete 🎉',`
+  <p style="text-align:center;font-size:13px;color:var(--mut);font-weight:600">Rate this customer & add proof of work</p>
+  <div class="starrow" id="wStarRow"></div>
+  <input type="file" id="wFile" accept="image/*,video/*" style="display:none" onchange="wPickMedia(event)">
+  <button class="pbtn ghost" onclick="document.getElementById('wFile').click()">📷 Add photo / video of the work</button>
+  <div id="wMediaPreview" style="text-align:center"></div>
+  <button class="pbtn" onclick="wSubmitReview('${bid}')">Submit & Finish</button>`);
+  wRating=5;wMedia=[];renderWStars();}
+async function wSubmitReview(bid){
+  const urls=[];for(const f of wMedia){try{const ext=(f.name.split('.').pop()||'jpg').toLowerCase();const path=bid+'/w-'+Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.'+ext;const {error}=await sb.storage.from('work-media').upload(path,f);if(!error){const {data}=sb.storage.from('work-media').getPublicUrl(path);urls.push(data.publicUrl);}}catch(e){}}
+  try{const upd={provider_rating:wRating};if(urls.length){const {data}=await sb.from('hh_bookings').select('work_media').eq('id',bid).single();upd.work_media=[...((data&&data.work_media)||[]),...urls];}await sb.from('hh_bookings').update(upd).eq('id',bid);}catch(e){}
+  wMedia=[];closePanel();toast('Thanks! 💛');}
 async function cancelJob(){if(job){await sb.from('hh_bookings').update({status:'cancelled'}).eq('id',job.id);endJob();toast('Job cancelled');}}
 function endJob(){if(custMarker){custMarker.rm();custMarker=null;}job=null;$('jobBox').classList.remove('on');$('idle').style.display='block';map.panTo(loc);map.setZoom(14);}
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200);}

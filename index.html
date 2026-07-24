@@ -122,6 +122,13 @@ h2{font-size:17px;font-weight:800}.sub{font-size:12.5px;color:var(--mut);font-we
 .pbtn{width:100%;padding:15px;border:none;border-radius:14px;background:var(--green);color:#fff;font:800 15px 'Plus Jakarta Sans';cursor:pointer;margin-top:14px}
 .pbtn.ghost{background:var(--bg);color:var(--ink)}
 .pempty{text-align:center;color:var(--mut);font-size:13px;padding:34px 0;font-weight:600}
+.vpill{font-size:10px;font-weight:800;padding:4px 9px;border-radius:99px;display:inline-flex;align-items:center;gap:3px}
+.vpill.ok{background:var(--greenL);color:var(--blue)}
+.vpill.pend{background:#FBEED0;color:#8A6D00}
+.starrow{font-size:34px;letter-spacing:8px;margin:6px 0;user-select:none}
+.starrow span{cursor:pointer}
+.mediathumb{display:inline-block;margin:4px;position:relative}
+.mediathumb img,.mediathumb video{width:66px;height:66px;object-fit:cover;border-radius:10px;background:#000}
 /* mobile-only phone frame on wider screens */
 @media(min-width:520px){
   html,body{background:#0F1319}
@@ -165,7 +172,10 @@ h2{font-size:17px;font-weight:800}.sub{font-size:12.5px;color:var(--mut);font-we
       </div>
       <div class="field"><span class="dot g"></span><input id="addr" placeholder="Your location — where care is needed"></div>
       <div class="svcrow" id="svcRow"></div>
-      <div class="paylab">Payment</div>
+      <div class="paylab">How long do you need?</div>
+      <div class="payrow" id="durRow"></div>
+      <textarea class="afield" id="notes" rows="2" placeholder="Notes for the helper (optional) — gate code, tasks, etc." style="margin-top:0"></textarea>
+      <div class="paylab" style="margin-top:12px">Payment</div>
       <div class="payrow" id="payRow"></div>
       <button class="cta" id="bookBtn" disabled onclick="listProviders()">Choose a service<span class="s">Verified helpers · NHIS accepted</span></button>
       <div class="livehint">Live preview — helpers come to your door</div>
@@ -211,12 +221,17 @@ h2{font-size:17px;font-weight:800}.sub{font-size:12.5px;color:var(--mut);font-we
       <div class="row2"><button class="ghost" onclick="toast('📞 Calling… (demo)')">Call</button><button class="ghost" onclick="toast('💬 Chat opened (demo)')">Chat</button><button class="ghost" onclick="cancelTrip()">Cancel</button></div>
     </div>
 
-    <!-- ARRIVED -->
+    <!-- COMPLETE + RATE -->
     <div class="step" id="p4" style="text-align:center">
-      <div style="font-size:42px;margin:2px 0 8px">🎉</div>
-      <h2>Ayekoo! <span id="doneName"></span> has arrived</h2>
-      <p class="sub" style="margin-top:4px">Pay after service — <span id="donePay">MoMo</span> or NHIS.</p>
-      <button class="cta" onclick="resetAll()">Book Another</button>
+      <div style="font-size:38px;margin:2px 0 4px">🎉</div>
+      <h2>Service complete</h2>
+      <p class="sub" style="margin-top:4px">How was <span id="doneName"></span>? Rate your helper</p>
+      <div class="starrow" id="starRow"></div>
+      <input type="file" id="workFile" accept="image/*,video/*" style="display:none" onchange="onPickMedia(event)">
+      <button class="ghost" onclick="document.getElementById('workFile').click()">📷 Add photo / video of the work</button>
+      <div id="mediaPreview"></div>
+      <p class="sub" style="margin-top:8px">Pay <span id="donePay">MoMo</span> or NHIS after service.</p>
+      <button class="cta" onclick="submitReview()">Submit & Finish</button>
     </div>
 
   </div>
@@ -300,15 +315,16 @@ function boot(){if(started)return;started=true;
 }
 async function loadRealProviders(){
   if(trip)return;
-  try{const {data,error}=await sb.from('hh_providers').select('id,service,rating,jobs_completed,license_verified,lat,lng,is_online,hh_profiles(full_name)');
+  try{const {data,error}=await sb.from('hh_providers').select('id,service,rating,jobs_completed,license_verified,bio,lat,lng,is_online,hh_profiles(full_name,verified,id_verified)');
     if(error||!data)return;
     const on=data.filter(r=>r.is_online&&DB2SVC[r.service]);const ids=new Set(on.map(r=>r.id));
     providers=providers.filter(p=>{if(p.real&&!ids.has(p.dbId)){if(p.m)p.m.setMap(null);return false;}return true;});
     let idx=providers.length?Math.max(...providers.map(p=>p.i))+1:0;
     on.forEach(r=>{const sid=DB2SVC[r.service];const ex=providers.find(p=>p.real&&p.dbId===r.id);const pos={lat:r.lat??user.lat+R(-.01,.01),lng:r.lng??user.lng+R(-.01,.01)};
+      const prof=r.hh_profiles||{};
       if(ex){ex.pos=pos;if(ex.m)ex.m.move(pos);return;}
       const m=ov(pos,`<div class="mk">${MICON[sid]}</div>`);
-      providers.push({i:idx++,svc:sid,real:true,dbId:r.id,name:(r.hh_profiles&&r.hh_profiles.full_name)||'Provider',role:`${sid} · ${r.rating}★ · ${r.jobs_completed} jobs`,face:MICON[sid],verified:r.license_verified,pos,m,eta:0});
+      providers.push({i:idx++,svc:sid,real:true,dbId:r.id,name:prof.full_name||'Provider',role:`${SERVICES.care.concat(SERVICES.home).find(s=>s.id===sid).nm} · ${r.rating}★`,face:MICON[sid],verified:r.license_verified,accVerified:prof.verified,idVerified:prof.id_verified,rating:r.rating,jobs:r.jobs_completed,bio:r.bio,pos,m,eta:0});
     });
   }catch(e){}
 }
@@ -335,14 +351,54 @@ function listProviders(){
   list.sort((a,b)=>(b.real?1:0)-(a.real?1:0));
   const nm=[...SERVICES.care,...SERVICES.home].find(s=>s.id===sel).nm;
   $('listTitle').textContent=nm+'s available now';
-  $('provList').innerHTML=list.map(p=>{const badge=p.real?(p.verified?'VERIFIED':'NEW'):'DEMO';return `<div class="prov" id="pv${p.i}" onclick="pickProv(${p.i})"><div class="pav">${p.face}</div><div class="info"><div class="n">${p.name}<span class="vbadge">${badge}</span></div><div class="d">${p.role}</div></div><div class="eta"><b>${p.eta}</b><span>min</span></div></div>`;}).join('');
-  pick=null;$('reqBtn').disabled=true;$('reqBtn').textContent='Request';go('p2');setSnap('full');
+  $('provList').innerHTML=list.map(p=>{const badge=p.real?(p.verified?'✓ VERIFIED':'✓ NEW'):'DEMO';return `<div class="prov" id="pv${p.i}" onclick="openProviderProfile(${p.i})"><div class="pav">${p.face}</div><div class="info"><div class="n">${p.name}<span class="vbadge">${badge}</span></div><div class="d">${p.role} · tap to view</div></div><div class="eta"><b>${p.eta}</b><span>min</span></div></div>`;}).join('');
+  pick=null;$('reqBtn').style.display='none';go('p2');setSnap('full');
 }
 function backToHome(){go('p1');setSnap('mid');}
-function pickProv(i){pick=providers.find(p=>p.i===i);document.querySelectorAll('.prov').forEach(e=>e.classList.remove('sel'));$('pv'+i).classList.add('sel');document.querySelectorAll('.mk').forEach(e=>e.classList.remove('active'));if(pick.m){const el=pick.m.el();if(el&&el.firstChild)el.firstChild.classList.add('active');}if(map)map.panTo(pick.pos);setSnap('mid');$('reqBtn').disabled=false;$('reqBtn').textContent=`Request ${pick.name.split(' ')[0]} · ${pick.eta} min`;}
+function openProviderProfile(i){
+  const p=providers.find(x=>x.i===i);pick=p;
+  document.querySelectorAll('.mk').forEach(e=>e.classList.remove('active'));if(p.m){const el=p.m.el();if(el&&el.firstChild)el.firstChild.classList.add('active');}if(map)map.panTo(p.pos);
+  const rt=p.rating||5.0;const stars='★'.repeat(Math.round(rt))+'☆'.repeat(5-Math.round(rt));
+  const idPill=p.real?(p.idVerified?'<span class="vpill ok">🪪 ID verified</span>':'<span class="vpill pend">🪪 ID pending review</span>'):'<span class="vpill pend">Demo profile</span>';
+  const accPill=(p.real&&p.accVerified)||!p.real?'<span class="vpill ok">☎ Phone verified</span>':'<span class="vpill pend">Phone pending</span>';
+  openPanel('Helper profile',`
+    <div style="text-align:center;padding:4px 0 12px">
+      <div style="width:76px;height:76px;border-radius:99px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:38px;margin:0 auto">${p.face}</div>
+      <div style="font-size:19px;font-weight:800;margin-top:8px">${p.name}</div>
+      <div style="font-size:12px;color:var(--mut);font-weight:600">${p.role}</div>
+      <div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;justify-content:center">${accPill}${idPill}</div>
+    </div>
+    <div class="pitem"><span>Rating</span><b style="color:var(--amber)">${stars} ${rt}</b></div>
+    <div class="pitem"><span>Jobs completed</span><b>${p.jobs??'—'}</b></div>
+    <div class="pitem"><span>Arrives in</span><b>${p.eta} min</b></div>
+    ${p.bio?`<p style="font-size:12.5px;color:var(--mut);font-weight:500;line-height:1.6;margin-top:12px">“${p.bio}”</p>`:''}
+    <button class="pbtn" onclick="closePanel();requestProvider()">Request ${p.name.split(' ')[0]} · ${p.eta} min</button>
+    <button class="pbtn ghost" onclick="closePanel()">Back to list</button>
+  `);
+}
+function pickProv(i){openProviderProfile(i);}
+
+/* ===== duration selector ===== */
+const DURS=[{id:1,nm:'1 hr'},{id:2,nm:'2 hrs'},{id:4,nm:'4 hrs'},{id:8,nm:'Full day'}];
+let dur=2;
+function renderDurs(){$('durRow').innerHTML=DURS.map(d=>`<div class="pay ${dur===d.id?'sel':''}" onclick="setDur(${d.id})">${d.nm}</div>`).join('');}
+function setDur(d){dur=d;renderDurs();}
+renderDurs();
+
+/* ===== ratings + media upload ===== */
+let custRating=5,pendingMedia=[];
+function renderStars(){$('starRow').innerHTML=[1,2,3,4,5].map(n=>`<span onclick="setRating(${n})" style="color:${n<=custRating?'var(--amber)':'#D8D8D8'}">★</span>`).join('');}
+function setRating(n){custRating=n;renderStars();}
+function onPickMedia(e){const f=e.target.files[0];if(!f)return;pendingMedia.push(f);const url=URL.createObjectURL(f);const isVid=f.type.startsWith('video');$('mediaPreview').innerHTML+=`<div class="mediathumb">${isVid?`<video src="${url}" muted></video>`:`<img src="${url}">`}</div>`;toast('Added — uploads on submit');e.target.value='';}
+async function uploadMedia(){const urls=[];for(const f of pendingMedia){try{const ext=(f.name.split('.').pop()||'jpg').toLowerCase();const path=(bookingId||'x')+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.'+ext;const {error}=await sb.storage.from('work-media').upload(path,f);if(!error){const {data}=sb.storage.from('work-media').getPublicUrl(path);urls.push(data.publicUrl);}}catch(e){}}return urls;}
+async function submitReview(){
+  const urls=await uploadMedia();
+  if(bookingId){try{await sb.from('hh_bookings').update({customer_rating:custRating,work_media:urls,status:'completed'}).eq('id',bookingId);}catch(e){}bookingId=null;}
+  pendingMedia=[];toast('Thank you! 💛');resetAll();
+}
 
 /* ===== booking ===== */
-async function createBooking(){try{const {data,error}=await sb.from('hh_bookings').insert({customer_id:session.user.id,provider_id:trip.real?trip.dbId:null,service:SVC2DB[sel],status:'requested',address:$('addr').value||'Pinned location',lat:user.lat,lng:user.lng,nhis_used:pay==='nhis',payment_method:pay==='momo'?'mtn_momo':pay==='card'?'card':pay==='cash'?'cash':'nhis'}).select('id').single();if(!error&&data)bookingId=data.id;}catch(e){}}
+async function createBooking(){try{const {data,error}=await sb.from('hh_bookings').insert({customer_id:session.user.id,provider_id:trip.real?trip.dbId:null,service:SVC2DB[sel],status:'requested',address:$('addr').value||'Pinned location',lat:user.lat,lng:user.lng,nhis_used:pay==='nhis',payment_method:pay==='momo'?'mtn_momo':pay==='card'?'card':pay==='cash'?'cash':'nhis',duration_hours:dur,notes:$('notes').value.trim()||null}).select('id').single();if(!error&&data)bookingId=data.id;}catch(e){}}
 async function setBookingStatus(s){if(!bookingId)return;try{await sb.from('hh_bookings').update({status:s}).eq('id',bookingId);}catch(e){}if(s==='completed'||s==='cancelled')bookingId=null;}
 /* ===== live status tracking ===== */
 const STATUS_MAP={
@@ -402,7 +458,7 @@ function onStatus(s){
   if(s==='in_progress'){toast('Work has started 🛠️');}
   if(s==='completed'){unsubscribeBooking();arrived();}
 }
-function arrived(){unsubscribeBooking();drawRoute(false);$('doneName').textContent=trip.name;$('donePay').textContent=({momo:'MoMo',card:'card',cash:'cash',nhis:'NHIS'})[pay];const wasReal=trip.real;if(trip.m&&!trip.real){trip.m.setMap(null);trip.m=null;}else if(trip.m){const el=trip.m.el();if(el&&el.firstChild)el.firstChild.classList.remove('active');}trip=null;if(!wasReal)setBookingStatus('completed');go('p4');setSnap('mid');confetti();}
+function arrived(){unsubscribeBooking();drawRoute(false);$('doneName').textContent=trip.name;$('donePay').textContent=({momo:'MoMo',card:'card',cash:'cash',nhis:'NHIS'})[pay];if(trip.m&&!trip.real){trip.m.setMap(null);trip.m=null;}else if(trip.m){const el=trip.m.el();if(el&&el.firstChild)el.firstChild.classList.remove('active');}trip=null;custRating=5;pendingMedia=[];$('mediaPreview').innerHTML='';renderStars();go('p4');setSnap('mid');confetti();}
 function cancelTrip(){if(tripTimer)clearInterval(tripTimer);unsubscribeBooking();drawRoute(false);if(trip){if(trip.m&&!trip.real){trip.m.setMap(null);trip.m=null;}else if(trip.m){const el=trip.m.el();if(el&&el.firstChild)el.firstChild.classList.remove('active');}trip=null;}setBookingStatus('cancelled');toast('Booking cancelled');backToHome();}
 function resetAll(){sel=null;renderSvcs();updateBook();if(map){map.panTo({lat:user.lat-0.004,lng:user.lng});map.setZoom(14);}backToHome();}
 
