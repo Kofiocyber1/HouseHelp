@@ -205,7 +205,9 @@ h2{font-size:17px;font-weight:800}.sub{font-size:12.5px;color:var(--mut);font-we
         <div><div style="font-size:15px;font-weight:800" id="tName"></div><div style="font-size:11.5px;color:var(--mut);font-weight:500" id="tRole"></div><div style="font-size:11px;color:var(--green);font-weight:700;margin-top:2px">✓ Verified · Licence checked</div></div>
         <div class="etaBig"><b id="tEta">–</b><span>min away</span></div>
       </div>
+      <div id="tStatus" style="font-size:13.5px;font-weight:800;color:var(--ink);margin:10px 0 2px;text-align:center">Requesting…</div>
       <div class="bar"><i id="tBar"></i></div>
+      <div id="tSteps" style="display:flex;justify-content:space-between;margin:8px 2px 4px"></div>
       <div class="row2"><button class="ghost" onclick="toast('📞 Calling… (demo)')">Call</button><button class="ghost" onclick="toast('💬 Chat opened (demo)')">Chat</button><button class="ghost" onclick="cancelTrip()">Cancel</button></div>
     </div>
 
@@ -342,20 +344,66 @@ function pickProv(i){pick=providers.find(p=>p.i===i);document.querySelectorAll('
 /* ===== booking ===== */
 async function createBooking(){try{const {data,error}=await sb.from('hh_bookings').insert({customer_id:session.user.id,provider_id:trip.real?trip.dbId:null,service:SVC2DB[sel],status:'requested',address:$('addr').value||'Pinned location',lat:user.lat,lng:user.lng,nhis_used:pay==='nhis',payment_method:pay==='momo'?'mtn_momo':pay==='card'?'card':pay==='cash'?'cash':'nhis'}).select('id').single();if(!error&&data)bookingId=data.id;}catch(e){}}
 async function setBookingStatus(s){if(!bookingId)return;try{await sb.from('hh_bookings').update({status:s}).eq('id',bookingId);}catch(e){}if(s==='completed'||s==='cancelled')bookingId=null;}
-function requestProvider(){
+/* ===== live status tracking ===== */
+const STATUS_MAP={
+  requested:['Waiting to be accepted…',8],
+  accepted:['✅ Accepted — getting ready',22],
+  en_route:['🚗 On the way to you',55],
+  arrived:['📍 Arrived at your location',82],
+  in_progress:['🛠️ Work in progress',92],
+  completed:['🎉 Service complete',100]
+};
+const STEP_ORDER=['requested','accepted','en_route','arrived','in_progress','completed'];
+let custChannel=null,custPoll=null,enrouteAnim=null;
+function renderSteps(cur){
+  const i=STEP_ORDER.indexOf(cur);
+  const labels=['Booked','Accepted','On way','Arrived','Working','Done'];
+  $('tSteps').innerHTML=labels.map((l,idx)=>`<div style="text-align:center;flex:1"><div style="width:10px;height:10px;border-radius:99px;margin:0 auto;background:${idx<=i?'var(--green)':'#DDE3DD'}"></div><div style="font-size:8.5px;font-weight:700;margin-top:3px;color:${idx<=i?'var(--ink)':'var(--mut)'}">${l}</div></div>`).join('');
+}
+async function requestProvider(){
   if(!pick)return;
   if(!session){pendingReq=true;go('pA1');setSnap('full');return;}
   trip=pick;if(!trip.m)trip.m=ov(trip.pos,`<div class="mk active">${trip.face}</div>`);
-  createBooking();
+  await createBooking();
   $('tAva').textContent=trip.face;$('tName').textContent=trip.name;$('tRole').textContent=trip.role;
   go('p3');setSnap('mid');drawRoute(true);
   if(map){const b=new google.maps.LatLngBounds();b.extend(trip.pos);b.extend(user);map.fitBounds(b,90);}
-  toast(`${trip.name.split(' ')[0]} accepted your request ✓`);
-  const start={...trip.pos},total=trip.eta*600,t0=Date.now();
-  tripTimer=setInterval(()=>{const k=Math.min(1,(Date.now()-t0)/total);trip.pos={lat:start.lat+(user.lat-start.lat)*k,lng:start.lng+(user.lng-start.lng)*k};trip.m.move(trip.pos);if(line)line.setPath([trip.pos,user]);$('tEta').textContent=Math.max(0,Math.ceil(trip.eta*(1-k)));$('tBar').style.width=(k*100)+'%';if(k>=1){clearInterval(tripTimer);arrived();}},400);
+
+  if(trip.real){
+    /* REAL provider — track the worker's live status via Supabase realtime */
+    $('tStatus').textContent=STATUS_MAP.requested[0];$('tBar').style.width='8%';$('tEta').textContent=trip.eta;renderSteps('requested');
+    toast('Request sent — waiting for '+trip.name.split(' ')[0]);
+    subscribeBooking();
+  }else{
+    /* DEMO helper — simulate the trip */
+    $('tStatus').textContent=STATUS_MAP.en_route[0];renderSteps('en_route');
+    toast(`${trip.name.split(' ')[0]} accepted your request ✓`);
+    const start={...trip.pos},total=trip.eta*600,t0=Date.now();
+    tripTimer=setInterval(()=>{const k=Math.min(1,(Date.now()-t0)/total);trip.pos={lat:start.lat+(user.lat-start.lat)*k,lng:start.lng+(user.lng-start.lng)*k};trip.m.move(trip.pos);if(line)line.setPath([trip.pos,user]);$('tEta').textContent=Math.max(0,Math.ceil(trip.eta*(1-k)));$('tBar').style.width=(k*100)+'%';if(k>=1){clearInterval(tripTimer);arrived();}},400);
+  }
 }
-function arrived(){drawRoute(false);$('doneName').textContent=trip.name;$('donePay').textContent=({momo:'MoMo',card:'card',cash:'cash',nhis:'NHIS'})[pay];if(trip.m&&!trip.real){trip.m.setMap(null);trip.m=null;}else if(trip.m){const el=trip.m.el();if(el&&el.firstChild)el.firstChild.classList.remove('active');}trip=null;setBookingStatus('completed');go('p4');setSnap('mid');confetti();}
-function cancelTrip(){if(tripTimer)clearInterval(tripTimer);drawRoute(false);if(trip){if(trip.m&&!trip.real){trip.m.setMap(null);trip.m=null;}else if(trip.m){const el=trip.m.el();if(el&&el.firstChild)el.firstChild.classList.remove('active');}trip=null;}setBookingStatus('cancelled');toast('Booking cancelled');backToHome();}
+function subscribeBooking(){
+  unsubscribeBooking();
+  if(!bookingId)return;
+  custChannel=sb.channel('cust-'+bookingId).on('postgres_changes',{event:'UPDATE',schema:'public',table:'hh_bookings',filter:'id=eq.'+bookingId},p=>onStatus(p.new.status)).subscribe();
+  custPoll=setInterval(async()=>{try{const {data}=await sb.from('hh_bookings').select('status').eq('id',bookingId).single();if(data)onStatus(data.status);}catch(e){}},5000);
+}
+function unsubscribeBooking(){if(custChannel){sb.removeChannel(custChannel);custChannel=null;}if(custPoll){clearInterval(custPoll);custPoll=null;}if(enrouteAnim){clearInterval(enrouteAnim);enrouteAnim=null;}}
+function onStatus(s){
+  if(!trip||!STATUS_MAP[s])return;
+  $('tStatus').textContent=STATUS_MAP[s][0];$('tBar').style.width=STATUS_MAP[s][1]+'%';renderSteps(s);
+  if(s==='en_route'){ // animate the helper marker toward the customer
+    if(enrouteAnim)clearInterval(enrouteAnim);
+    const start={...trip.pos},total=Math.max(6000,trip.eta*800),t0=Date.now();
+    enrouteAnim=setInterval(()=>{const k=Math.min(1,(Date.now()-t0)/total);trip.pos={lat:start.lat+(user.lat-start.lat)*k,lng:start.lng+(user.lng-start.lng)*k};if(trip.m)trip.m.move(trip.pos);if(line)line.setPath([trip.pos,user]);$('tEta').textContent=Math.max(0,Math.ceil(trip.eta*(1-k)));if(k>=1)clearInterval(enrouteAnim);},400);
+    toast(trip.name.split(' ')[0]+' is on the way 🚗');
+  }
+  if(s==='arrived'){if(enrouteAnim)clearInterval(enrouteAnim);if(trip&&trip.m)trip.m.move(user);if(line)line.setPath([user,user]);$('tEta').textContent='0';toast(trip.name.split(' ')[0]+' has arrived 📍');}
+  if(s==='in_progress'){toast('Work has started 🛠️');}
+  if(s==='completed'){unsubscribeBooking();arrived();}
+}
+function arrived(){unsubscribeBooking();drawRoute(false);$('doneName').textContent=trip.name;$('donePay').textContent=({momo:'MoMo',card:'card',cash:'cash',nhis:'NHIS'})[pay];const wasReal=trip.real;if(trip.m&&!trip.real){trip.m.setMap(null);trip.m=null;}else if(trip.m){const el=trip.m.el();if(el&&el.firstChild)el.firstChild.classList.remove('active');}trip=null;if(!wasReal)setBookingStatus('completed');go('p4');setSnap('mid');confetti();}
+function cancelTrip(){if(tripTimer)clearInterval(tripTimer);unsubscribeBooking();drawRoute(false);if(trip){if(trip.m&&!trip.real){trip.m.setMap(null);trip.m=null;}else if(trip.m){const el=trip.m.el();if(el&&el.firstChild)el.firstChild.classList.remove('active');}trip=null;}setBookingStatus('cancelled');toast('Booking cancelled');backToHome();}
 function resetAll(){sel=null;renderSvcs();updateBook();if(map){map.panTo({lat:user.lat-0.004,lng:user.lng});map.setZoom(14);}backToHome();}
 
 /* ===== auth ===== */
